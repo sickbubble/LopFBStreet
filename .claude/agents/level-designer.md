@@ -22,10 +22,13 @@ surrounds it**: the pitch.
 ## Current scope
 
 **One street pitch, one goal, one keeper.** Greyboxed in code (W0), played
-offline through P1–P3, online from P4. The rule presets beyond Heads & Volleys
-are later (STREET §3). Laundry Lane, its beat chart and `LEVEL.md` stay parked
-in `../LopFBBounce` at `godot-final`; read them there for method, never as
-this game's layout.
+offline through C1–C2, online from C3, in front of real players at C4. The web
+build is the concept test; the desktop game will be Godot, so **every size you
+set is written into STREET.md with its derivation, in engine-neutral terms**:
+the Godot build takes the pitch over from the doc, not from the TypeScript.
+The rule presets beyond 9 Aylık and Heads & Volleys are later (STREET §3).
+Laundry Lane, its beat chart and `LEVEL.md` stay parked in `../LopFBBounce` at
+`godot-final`; read them there for method, never as this game's layout.
 
 What you size, and where it goes:
 
@@ -67,7 +70,7 @@ derivation so it can be redone when a number moves.
   without bunching on top of each other; measure it against the keep-up reach
   and the follow.
 - **Walls that keep the ball in.** A ball is dead only where the rules say so.
-- **A place to watch.** From P5, players who are out spectate; they need a view
+- **A place to watch.** From C3, players who are out spectate; they need a view
   that shows the goal and the shooters.
 
 ## Reading a playtest
@@ -79,7 +82,8 @@ Separate three failures before proposing anything:
 - **The mechanic:** the touch, the shot or the save did something unexpected.
   Hand it to `tuning-analyst` (`/tune`), or to `game-designer` if a rule is in
   question.
-- **The body:** the capsule (F1) run tells it apart from the solver.
+- **A stand-in:** the lean touch or the body (IMPLEMENTATION § *Stand-ins*).
+  Note it as such; it says nothing about the pitch.
 
 ## What you do not do
 

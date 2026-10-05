@@ -8,14 +8,18 @@
 #            and either fix it or confirm it is still true.
 #
 #   STALE    a backticked identifier in a skill, agent or command file that
-#            exists neither in packages/ (and the build config) nor in the C#
-#            reference, ../LopFBBounce. In the Godot repo DribbleApex,
+#            exists neither in packages/ (and the build config) nor in the
+#            Godot reference, ../LopFBBounce. In the Godot repo DribbleApex,
 #            AutoBounce, HorizontalEase and CenteringGain all outlived their
 #            code this way.
 #
-#   PENDING  a name found only in the C# reference: the port has not reached
-#            it yet. Expected through W1-W3, never a failure. Once the port is
-#            done, a PENDING name is a rename the port made silently.
+#   PENDING  a Godot-only name: found in ../LopFBBounce and not in packages/.
+#            This repo is the concept test and does not port the Godot touch
+#            or body (docs/IMPLEMENTATION.md, "Not built here"), so most of
+#            these names will never exist here. Not a backlog and never a
+#            failure: the .claude/ files name them to say what Godot has. The
+#            only thing to look for is a file telling an agent to use one here
+#            as if it existed.
 #
 #            A name that is deliberately absent -- browser or library
 #            vocabulary, a retired parameter kept as a tombstone, or a spec
@@ -34,7 +38,7 @@ set -u
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root" || exit 1
 
-# The C# reference, read at its tag when the tag is there.
+# The Godot reference, read at its tag when the tag is there.
 ref_repo="$root/../LopFBBounce"
 ref_tag="godot-final"
 
@@ -175,7 +179,7 @@ if [ -n "$stale_report" ]; then
 
     printf '%s\n' "$stale_report" | while IFS=$'\t' read -r _ f l n; do
         printf '%s   %s\n' "${red}STALE${off}" "${bold}${f}:${l}${off}"
-        printf '        %s\n' "\`${n}\` not found in packages/, the build config, or the C# reference"
+        printf '        %s\n' "\`${n}\` not found in packages/, the build config, or the Godot reference"
     done
 
     printf '\n'
@@ -184,7 +188,7 @@ fi
 if [ -n "$pending_report" ]; then
     pending=$(printf '%s\n' "$pending_report" | cut -f4 | sort -u | wc -l | tr -d ' ')
 
-    printf '%s %s\n' "${cyan}PENDING${off}" "${dim}in ../LopFBBounce, not ported yet:${off}"
+    printf '%s %s\n' "${cyan}PENDING${off}" "${dim}Godot-only name (not built here):${off}"
     printf '%s\n' "$pending_report" | cut -f4 | sort -u | tr '\n' ' ' | fold -s -w 76 | sed 's/^/        /'
     printf '\n\n'
 fi
@@ -192,11 +196,11 @@ fi
 # --- summary ---------------------------------------------------------------
 
 if [ "$reviews" -eq 0 ] && [ "$stale" -eq 0 ]; then
-    printf '%s\n' "${green}nothing to review, no stale names${off} ${dim}(${pending} pending the port)${off}"
+    printf '%s\n' "${green}nothing to review, no stale names${off} ${dim}(${pending} Godot-only)${off}"
     exit 0
 fi
 
-printf '%s\n' "${dim}${reviews} to review, ${stale} stale, ${pending} pending the port${off}"
+printf '%s\n' "${dim}${reviews} to review, ${stale} stale, ${pending} Godot-only${off}"
 
 [ "$stale" -gt 0 ] && exit 1
 exit 0

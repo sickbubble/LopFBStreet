@@ -2,17 +2,23 @@
 
 > **Written for the Godot build** (LopFBBounce, tag `godot-final`, in
 > `../LopFBBounce`). The rules hold here. The Godot nodes, the `.tscn` scenes,
-> the Inspector and the Remote tab it mentions are history: on the web the
-> numbers live in `tools/golden/tuning/*.json` and are edited live in the
-> lil-gui panel. S-numbers (S1–S35) refer to that repo's
+> the Inspector and the Remote tab it mentions are history here: on the web
+> the shipped numbers are in `tools/golden/tuning/*.json` and are edited live
+> in the lil-gui panel. S-numbers (S1–S35) refer to that repo's
 > `docs/IMPLEMENTATION.md`; M-numbers to its milestones.
+>
+> **The touch this document describes is Godot's, and it is the real one.**
+> The web build is a concept test and plays a lean stand-in for it
+> ([`IMPLEMENTATION.md`](IMPLEMENTATION.md) § *Stand-ins*); the touch is not
+> being ported to the web. Where the web touch differs from this document,
+> this document is right, and the desktop game will be built from it.
 
 Owned by the `game-designer` agent.
 
 **Scope of this document is the current game: single-player, one demo level.**
 The 1–6 player co-op, the flow meter, the roguelite run structure and the art
 pipeline are designed and deliberately unbuilt — they live in
-[`LATER.md`](LATER.md). Nothing here should be read as describing them.
+[`LATER.md`](../../LopFBBounce/docs/LATER.md). Nothing here should be read as describing them.
 
 ---
 
@@ -23,7 +29,7 @@ past obstacles in the air and on the ground. Ronaldinho *Joga Bonito* style,
 built out of two buttons: one keeps the ball up, one sends it.
 
 **Engine:** Godot 4.7.2, C#, Jolt physics. The architecture avoids Godot's one
-disqualifying weakness for this genre — see [`LATER.md`](LATER.md) on why the
+disqualifying weakness for this genre — see [`LATER.md`](../../LopFBBounce/docs/LATER.md) on why the
 ball is host-authoritative when multiplayer eventually lands.
 
 **Locked decisions:**
@@ -395,7 +401,7 @@ Laundry Lane, an Istanbul backstreet.
   the lane, which catches a foot keep-up and passes under a knee carry.
 - **High wall:** a courtyard wall with an arched gate beside it.
 
-The layout is in [`LEVEL.md`](LEVEL.md).
+The layout is in [`LEVEL.md`](../../LopFBBounce/docs/LEVEL.md).
 
 ---
 

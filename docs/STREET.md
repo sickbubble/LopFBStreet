@@ -4,8 +4,8 @@ Owned by the `game-designer` agent.
 
 > Approved by the developer 2026-10-02. **M1 (Laundry Lane) is parked, not
 > abandoned.** The street work lives in this repo under
-> `packages/domain/src/street/` and reuses the ported touch solvers. Nothing
-> here is built yet. Research and the reasoning are in the approved plan
+> `packages/domain/src/street/` and sits on the touch. Nothing here is built
+> yet. Research and the reasoning are in the approved plan
 > (*so-keep-the-bouncing-mighty-giraffe*). The pitch is sized by
 > `level-designer`; the domain split is reviewed by `gameplay-engineer`.
 >
@@ -14,6 +14,19 @@ Owned by the `game-designer` agent.
 > everything else stands as approved. [`LATER.md`](../../LopFBBounce/docs/LATER.md)
 > and `LEVEL.md` stay in `../LopFBBounce` at `godot-final`; the links below
 > point there.
+>
+> **The web build is the concept test (2026-10-05).** It implements this
+> design lean, to find out whether the street game holds people's attention
+> ([`IMPLEMENTATION.md`](IMPLEMENTATION.md) phases C1–C4), on a lean touch
+> that stands in for Godot's. §7's phases and gates describe the full game,
+> to be built in Godot; the web's gates are IMPLEMENTATION's concept gates.
+> So this file is written in engine-neutral terms: it is what the Godot build
+> takes over.
+>
+> **On the web, 9 Aylık is the first preset** (IMPLEMENTATION C2.3), because
+> the developer's interest is the *alman aylığı* kind of game: in the air,
+> points by finish, the keeper leaves at nine. Heads & Volleys stays second.
+> §2's ruleset text is unchanged.
 
 [`GDD.md`](GDD.md) still governs the touch: carry, bounce, pass, the levels,
 the contact plan, rule 4. This file adds what a goal and a keeper need, and
@@ -123,7 +136,9 @@ settings record, never a subclass.
 ## 3. Presets — later
 
 Labelled **later**: data only, built after Heads & Volleys passes P3. Names
-are generic on purpose: no "Wembley", "World Cup" or "FIFA".
+are generic on purpose: no "Wembley", "World Cup" or "FIFA". The web build
+departs from this order: 9 Aylık first, Heads & Volleys second (see the note
+at the top).
 
 | Preset | Valid finish | Scoring by touch | Who goes in goal | Elimination | End |
 |---|---|---|---|---|---|
@@ -351,6 +366,11 @@ This is the summary. The multiplayer architecture in
 [`LATER.md`](../../LopFBBounce/docs/LATER.md) § *Multiplayer* was written for
 Steam and Godot; its principles hold, and this section is what changes on the
 web. **Do not drift toward a client-predicted ball.**
+
+The desktop build will use Steam transport (lobbies, Steam Networking
+Sockets) with the same authority model: one authority (a host or a server)
+running the domain sim, touches as events, the keeper handoff. Only the Node server, room links and
+the browser transport below are web-specific.
 
 - **An authoritative Node server running the shared domain sim.**
   `packages/server` imports `packages/domain`, the same code the browser runs,

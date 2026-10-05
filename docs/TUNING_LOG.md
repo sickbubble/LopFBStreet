@@ -2,10 +2,17 @@
 
 > **Written for the Godot build** (LopFBBounce, tag `godot-final`, in
 > `../LopFBBounce`). The rules hold here. The Godot nodes, the `.tscn` scenes,
-> the Inspector and the Remote tab it mentions are history: on the web the
-> numbers live in `tools/golden/tuning/*.json` and are edited live in the
-> lil-gui panel. S-numbers (S1–S35) refer to that repo's
+> the Inspector and the Remote tab it mentions are history here: on the web
+> the shipped numbers are in `tools/golden/tuning/*.json` and are edited live
+> in the lil-gui panel. S-numbers (S1–S35) refer to that repo's
 > `docs/IMPLEMENTATION.md`; M-numbers to its milestones.
+>
+> **The history below is Godot's touch.** The web plays a lean stand-in
+> ([`IMPLEMENTATION.md`](IMPLEMENTATION.md) § *Stand-ins*), so most of these
+> values do not exist there. **A row made on the web is tagged *web*** and
+> says whether its value depends on the lean touch (a shot speed tuned against
+> it may not transfer to Godot; a goal size, a keeper reach or a lives count
+> does).
 
 Owned by the `tuning-analyst` agent. Add a row with `/tune <what feels wrong>`
 **before** the next attempt starts.

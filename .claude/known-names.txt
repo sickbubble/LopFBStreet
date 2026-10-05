@@ -4,9 +4,10 @@
 # carries the reason it is here, because an unexplained entry is how a real
 # stale name gets hidden.
 #
-# Names that exist in the C# reference (../LopFBBounce at godot-final) but not
-# yet in packages/ are reported as PENDING, not STALE, so the port's backlog
-# does not belong here.
+# Names that exist in the Godot reference (../LopFBBounce at godot-final) but
+# not in packages/ are reported as PENDING ("Godot-only name, not built here"),
+# not STALE, so they do not belong here either. This repo does not port the
+# Godot touch or body, so most of them never will exist here.
 #
 # Before adding a name, check it is genuinely one of the cases below.
 # The default answer to a STALE report is to fix the file, not to add a line.
@@ -34,21 +35,21 @@ CarryRestitution
 AutoBounce
 
 # --- Deliberately absent: specced but not built ----------------------------
-# Named in docs/STREET.md with a spec and no code yet (P1-P3).
+# Named in docs/STREET.md with a spec and no code yet (IMPLEMENTATION C1-C2).
 # Delete the line when the code appears -- that is the point of listing them.
 
-# P1, STREET.md section 5: the shot.
+# C1, STREET.md section 5: the shot.
 ShotSolver
 MinReactDistance
 
-# P2, STREET.md section 6: the keeper.
+# C2, STREET.md section 6: the keeper.
 KeeperPlanner
 StandReach
 ReactDiveReach
 CommitDiveReach
 KeeperBox
 
-# P3, STREET.md sections 2 and 9: the rules and the pitch.
+# C2, STREET.md sections 2 and 9: the rules and the pitch.
 StreetRules
 GoalWidth
 GoalHeight

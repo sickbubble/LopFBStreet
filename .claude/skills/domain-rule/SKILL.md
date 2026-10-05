@@ -1,14 +1,22 @@
 ---
 name: domain-rule
-description: Add, change or port a gameplay rule in LopFBStreet - anything with a number in it. Use when porting a C# file from ../LopFBBounce (godot-final) to packages/domain, translating its xUnit tests to Vitest, wiring a golden vector or a step log, chasing a mismatch against tools/golden, adding a tuning field, writing a street solver (shot, goal, keeper, rules), deciding whether code belongs in packages/domain or packages/game, or fixing a type error in either.
+description: Add or change a gameplay rule in LopFBStreet - anything with a number in it. Use when writing the lean touch, the ball integrator, the goal line, the shot, the keeper, the street rules or the bots' decisions in packages/domain, writing their Vitest tests, reading a shipped value from tools/golden/tuning, adding a tuning field, writing a street rule's spec into docs/STREET.md, keeping a street rule portable to C#, deciding whether code belongs in packages/domain or packages/game, or fixing a type error in either.
 ---
 
-# Adding, changing or porting a rule
+# Adding or changing a rule
 
 `packages/domain` is pure TypeScript with every rule in it, under test, with no
 three, no DOM and no Node. `packages/game` is thin adapters over it. The split
 is enforced by the compiler and by `packages/domain/test/architecture.test.ts`,
 not by discipline.
+
+This repo is the concept test; the desktop game is Godot. There are two kinds
+of rule here:
+
+- **The lean touch** is a stand-in for Godot's touch. Simple, tested, and
+  nothing about it goes back.
+- **The street rules** (the goal, the shot, the keeper, the rules, the bots)
+  go back to Godot. They are specified in the docs and written to port to C#.
 
 ## 1. Does it belong in `packages/domain`?
 
@@ -16,86 +24,75 @@ Ask: **could this be wrong in a way a unit test would catch?**
 
 | Rule — goes in `domain` | Engine vocabulary — stays in `game` |
 |---|---|
-| bounce decay, the touch, the carry, the stall | camera basis maths |
-| possession, charge curves, verb bands | mesh and material construction |
-| landing prediction, the ball integrator, reception | input polling, scene lookups, the frame loop |
-| which limb plays a touch, its side, when and where | IK solving, bone lookups, the limb → bone-name map |
-| limb reach, the strike path's timing, the stride clock | the animation mixer, blend weights |
-| how far a part turns, how a turn is shared down a chain | which bone, which axis, which skeleton |
-| the shot, the goal line, the keeper's reach, the street rules | the HUD, the panel, the arc's line mesh |
+| the lean touch: which part by height, the apex, where it is aimed | camera basis maths |
+| the ball integrator, the ground, walls and posts | mesh and material construction |
+| the goal line, the shot, the strike window | input polling, scene lookups, the frame loop |
+| the keeper's reaction time, reach and dives | the animation mixer, blend weights |
+| the street rules, the bots' decisions | bone lookups, which bone a turn is applied to |
+| how far a part turns to show a touch, if a player could complain about it | the HUD, the panel, the arc's line mesh |
 
-**The body drivers are where this is hardest to see**, and it bit twice in the
-Godot build: a chest turn of `angle * 0.5` and an arch of `arch / 3` were
-written straight into a driver. Both looked like blend weights and both were
-rules, untested and untunable, so when the developer said *"the head lean
-towards the ball"* there was no value to reach for. They became
-`ChestPose.HeadTurn` and `ChestPose.ArchShares`.
+**The body is where this is hardest to see**, and it bit twice in the Godot
+build: a chest turn of `angle * 0.5` and an arch of `arch / 3` were written
+straight into a driver. Both looked like blend weights and both were rules,
+untested and untunable, so when the developer said *"the head lean towards the
+ball"* there was no value to reach for.
 
 The test: **would a playtester ever complain about this number?** Then it is a
-rule, however small, and it needs the domain, a tuning field and a test.
+rule, however small, and it needs the domain, a named setting and a test.
 
-## 2. Porting a C# file
+## 2. Adding a rule, test-first
 
-The reference is `../LopFBBounce` at the tag `godot-final`. Read it there; never
-edit it. If the working tree there has moved, read the tag:
-`git -C ../LopFBBounce show godot-final:domain/Ball/Ballistics.cs`.
+1. **Find the spec.** A street rule's spec is in STREET.md (the shot §5, the
+   keeper §6, the rules §2–3) or an S36+ spec in IMPLEMENTATION.md. A lean
+   touch rule's is IMPLEMENTATION C1.4. If the spec is silent on something the
+   code must decide, the spec changes first: write the sentence, then the code.
+2. **Write the test first**, in `packages/domain/test/`, mirroring `src/`,
+   named as a football sentence. Model inputs the game can actually generate.
+3. **Write the rule** as a pure function, or a stateful one with explicit state
+   (§4). Keep it as small as the test needs.
+4. **Read every shipped number** from the tuning JSON (§5). Never retype one.
+5. `npm test` and `npm run typecheck` green.
+6. **Write the doc the same day** (§3). For a street rule this is part of the
+   task, not a follow-up.
 
-1. **Find the place in the order.** `docs/IMPLEMENTATION.md` W1 (and W3 for
-   `domain/Body/*`) lists every file in dependency order with its C# test
-   files. Port nothing whose dependencies are not ported yet; a stub to get
-   ahead is a second opinion that will drift.
-2. **Read the C# file and every test that touches it**, not only the
-   same-named one. The task row names them; `grep -lw <Type>` over
-   `../LopFBBounce/tests` finds the rest.
-3. **One C# file → one TS file**, `domain/Ball/LaunchSolver.cs` →
-   `packages/domain/src/ball/LaunchSolver.ts`. Keep the C# names for types,
-   settings fields and constants (`BounceSolver`, `HoldOffset`): the JSON loads
-   without a rename table and TUNING_LOG greps to the same word. Functions are
-   camelCase. Keep the doc comments; they carry the football and the S-number.
-4. **Translate shapes, not behaviour:**
-   - `readonly record struct` + `with` → a readonly object type + spread;
-   - `System.Numerics.Vector3` → the domain `Vec3`; never a three type;
-   - `Span<T>` / `ReadOnlySpan<T>` → a preallocated array passed in;
-   - `in` parameters → plain parameters, never mutated;
-   - `double` clocks → plain numbers;
-   - `MathF.Round` → `roundHalfEven`, never `Math.round`;
-   - a `float` comparison on a threshold → `Math.fround` on both sides.
-5. **Translate the tests beside it**, `packages/domain/test/ball/LaunchSolver.test.ts`,
-   one `it` per `[Fact]`, one table per `[Theory]`, the same football sentence
-   as the name. A C# test that cannot be translated is recorded in PROGRESS with
-   the reason; it is never dropped quietly.
-6. **Wire the golden files.** A pure function gets
-   `tools/golden/vectors/<Area>/<File>.json`; a stateful solver gets its step
-   logs in `tools/golden/steps/<Solver>/`, replayed both re-fed per tick and
-   free-running (ARCHITECTURE § Golden files). If a vector the port needs does
-   not exist, the fix is a new case in `tools/GoldenDump` in the old repo, run
-   there and copied here. **Never write expected values by hand**, and never
-   generate them from the TS itself.
-7. `npm test` and `npm run typecheck` green before the next file.
+The C# in `../LopFBBounce` at `godot-final` is worth reading for how a rule was
+thought through (`LaunchSolver`'s profiles, `TrajectorySampler`'s step order).
+Read it there, never edit it, and do not port it: the lean version is written
+fresh. Godot's touch types are not built here (IMPLEMENTATION § *Not built
+here*).
 
-### When the port and the golden file disagree
+## 3. Street rules travel back to Godot
 
-The port is wrong until proven otherwise. In order:
+The web code is thrown away when the desktop build starts. A street rule that
+lives only in TypeScript is lost with it. So, for anything under
+`packages/domain/src/street/`:
 
-1. An operation order that differs from C# (damp before gravity, a clamp
-   applied after instead of before).
-2. Rounding: `Math.round` where C# had half-to-even; a threshold compared in
-   double that C# compared in `float`.
-3. A default: a value typed in TS instead of loaded from the JSON.
-4. Integer division: C# `int / int` truncates; JS does not.
-5. Only then a real float-versus-double difference, which shows as a small
-   error growing over a step log, never a jump.
+- **The spec is in `docs/` the same day.** STREET.md (or an S36+ spec)
+  describes it in engine-neutral words: what it decides, its parameters by
+  name, its starting values and where they came from, and the football
+  sentence behind it. No three.js, no browser, no TypeScript in that text. If
+  the code and the doc disagree, fix one of them that day.
+- **Plain data in, plain data out.** Inputs and outputs are readonly records of
+  numbers, booleans, strings and `Vec3`. No closures kept as state, no
+  callbacks into `game`, no TypeScript-only tricks. A rule is written so it
+  becomes a C# `readonly record struct` and a static method without being
+  restructured. ARCHITECTURE § *Portability to C#* has the full list.
+- **STREET.md's names, exactly** (`ShotSolver`, `StreetRules`,
+  `KeeperPlanner`, `GoalWidth`). A name the code needs and STREET.md lacks goes
+  into STREET.md first. Functions are camelCase.
+- **Tests are football sentences**, so they translate to xUnit names one for
+  one.
+- **State is explicit**, so the rule's steps can be dumped and replayed when
+  the C# version is checked against it later.
 
-**Tolerance:** `1e-4` absolute by default. A wider one is written next to the
-case with the reason and the measured error. **A test that only passes after
-loosening its tolerance is a failing test.** Never loosen a tolerance to make a
-port pass; find which of the five it is.
+The lean touch is exempt from the doc rule (it does not go back), but follows
+the same code habits.
 
-## 3. The four rules
+## 4. The four rules
 
 **Rule 1 — `packages/domain` never imports three, the DOM or Node.** No
-`Math.random`, no `Date.now`, no `performance`: the server at P4 runs this code
-as the authority. Conversion to and from `THREE.Vector3` happens only in
+`Math.random`, no `Date.now`, no `performance`: the C3 server runs this code as
+the authority. Conversion to and from `THREE.Vector3` happens only in
 `packages/game/src/bridge/vec.ts`, at the call site inside an adapter.
 
 **Rule 2 — the integrator is the only write path.** The ball's position and
@@ -103,73 +100,73 @@ velocity are written inside the fixed step, by the integrator, from the
 solver's output. Prove it after any change near the ball: grep `packages/game`
 and `packages/domain` for assignments to the ball's position or velocity and
 read every hit. Reads are fine; a write outside the integrator is the bug. A
-hazard, a keeper or a pass request asks the domain and queues a request the
-next step applies.
+keeper or a shot request asks the domain and queues a request the next step
+applies.
 
 **Rule 3 — a rule with a number in it belongs in `packages/domain`, with a
-test.**
+test.** Lean is not a licence to skip this.
 
-**Rule 4 — the body meets the ball; nothing in the body writes it.** The
-domain plans each contact before it happens; `game` drives the body to meet
-it. IK targets are clamped to the planned reach. **A bone is never a solver
-input**: body dimensions enter the domain as rest-pose numbers from
-`player.json`, checked against the skeleton at boot. A body rule may read the
-clip's live bones to decide a *pose*, because nothing in the ball's path reads
-what it returns. **Which limb plays a touch never changes the ball's
-velocity** — test that.
+**Rule 4 — the body shows the touch; nothing in the body writes it.** The
+domain decides which part plays the ball and when; `game` shows it with clips
+and simple procedural bone turns (no IK here). **A bone is never a solver
+input**: reaches and heights come from `player.json`. A ball out of reach is a
+miss, never a stretch.
 
-## 4. The solver shape
+## 5. The solver shape
 
 A pure function of its inputs: no three types, no side effects, no clock of its
 own. The caller passes the step and the time.
 
 ```ts
-export function solve(input: BounceInput, settings: BounceSettings): Vec3
+export function solveShot(input: ShotInput, settings: ShotSettings): ShotResult
 ```
 
-Settings are readonly object types. Stateful solvers own their state
-explicitly (a class or a state object passed in and returned), so a step log
-can set it.
+Settings are readonly object types. A stateful rule takes its state in and
+returns the next state, so a test can set it and a replay can step it.
 
-## 5. The tuning pair
+## 6. The numbers
 
-Every shipped value comes from `tools/golden/tuning/*.json`. **No default is
-typed into TS a second time.** Which file depends on whose number it is:
+**Shipped values are read from `tools/golden/tuning/*.json`, never retyped.**
+Wherever a Godot value means the same thing here, it comes from the JSON
+through a strict loader:
 
-- **The ball's** (the touch, the carry, the launch, possession): `ball.json`,
-  the C# `BallSettings` record serialised. The TS settings type mirrors the
-  record, field for field.
-- **The body's** (a reach, the strike path, the stride, a pose, the reaction,
-  the follow): `player.json`, a flat map of the Godot exports plus
-  `sceneOverrides`. The TS builder copies the C# property that built the
-  record, **including degrees → radians** for angles.
-- **The animator's**: `animator.json`.
-- **The camera's**: the `CameraModes` statics, ported once with that file.
-- **A new rule with no C# twin** (the street solvers from P1): the settings
-  type in `packages/domain/src/street/`, and its starting values in one JSON
-  file under the street package, cited from STREET.md. Never two places.
+- **`ball.json`**: the C# `BallSettings` record serialised. Ball physics
+  (`Radius`, `LinearDamp`, `Bounce`, `Friction`), each level's `TouchHeight`,
+  `Apex` and `SpeedFactor`, the launch speeds.
+- **`player.json`**: a flat map of the Godot exports plus `sceneOverrides`
+  applied on top. The body's reaches and heights. **Angles are degrees** (the
+  keys end in `Degrees`); `PlayerMotor` converted them with `DegToRad`, and the
+  loader does the same. `ball.json` angle fields stay degrees, as in the C#
+  record.
+- **`animator.json`** and **`camera.json`**: read only what the web uses.
 
-Loaders are strict: a missing or unknown key throws by name. Read the settings
-**every step**, never cache them at boot, or the lil-gui panel's live edits do
-nothing.
+Field names stay as in C#, so the JSON loads without a rename table and
+TUNING_LOG greps to the same word. Loaders are strict: a missing key the code
+reads throws by name. `tools/golden/` is never edited by hand.
+
+**A new value with no Godot twin** (a goal size, a keeper reach, a rule's
+points): a named setting under `packages/domain/src/street/`, with its starting
+value in one place, cited from STREET.md. Never two places.
+
+**Read the settings every step**, never cache them at boot, or the lil-gui
+panel's live edits do nothing.
 
 **A number that is the sum of others is derived, never stored.** A settings
 type with both a total and its parts will have one of them wrong the first time
 somebody changes the other.
 
-**A contact timing has a constraint outside its group:** the phases of
-`ContactTiming` must fit inside the flight, and `CarryLevelCheck` says so by
-name. Adding a phase means re-checking that sum.
-
-## 6. Tests
+## 7. Tests
 
 Vitest under `packages/domain/test/`, mirroring `src/`. Names are football
-sentences.
+sentences:
+
+    it('a running keep-up lands ahead of the runner, never behind')
+    it('a volley struck early goes over the aim point')
 
 **Never change a domain test to make a tuning value pass.** The tests encode
 the intended behaviour; a value that breaks one is the wrong value. If a
-behaviour genuinely should change, that is a spec change in
-`docs/IMPLEMENTATION.md` first (new specs start at S36).
+behaviour genuinely should change, that is a spec change in STREET.md (or an
+S36+ spec) first.
 
 Model inputs the game can actually generate. The motor ramps velocity toward
 its target at a fixed acceleration, so a test that assigns a velocity directly
@@ -180,15 +177,15 @@ npm test
 npm run typecheck
 ```
 
-## 7. Finish the change
+## 8. Finish the change
 
-- If any carry-level number moved, `CarryLevelCheck` must still hold against
-  the loaded `ball.json`. The constraint chain is the old repo's
-  IMPLEMENTATION S8.
-- If the change is a response to how the game feels, it belongs in
-  `docs/TUNING_LOG.md` through `/tune`, so it is not tried twice.
-- Update the task row in `docs/PROGRESS.md`: tests translated, vectors and step
-  logs passing, anything left open with its reason.
+- **A street rule:** STREET.md (or the S36+ spec) says what the code does, in
+  engine-neutral words, with the same names. Check it before calling the task
+  done.
+- **A response to how the game feels:** it belongs in `docs/TUNING_LOG.md`
+  through `/tune`, tagged *web*, saying whether the value depends on the lean
+  touch.
+- Update the task row in `docs/PROGRESS.md`.
 
 ## Sources
 
@@ -198,6 +195,7 @@ any of them changed, re-read this skill against them.
 - `CLAUDE.md`
 - `docs/ARCHITECTURE.md`
 - `docs/IMPLEMENTATION.md`
+- `docs/STREET.md`
 - `docs/TUNING_LOG.md`
 - `packages/domain/tsconfig.json`
 - `packages/domain/test/architecture.test.ts`

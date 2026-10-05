@@ -1,25 +1,44 @@
 # LopFBStreet
 
 Street football in the browser. One goal, one keeper, two to six players who
-keep the ball up between them and finish in the air. The touch (bounce, carry,
-pass) comes from LopFBBounce, the Godot game this repo replaces.
+keep the ball up between them and finish in the air.
+
+**This repo is the concept test. The desktop game is Godot.** The web build
+finds out, fast and from a link anyone can open, whether the street game holds
+people's attention. If it does, the detailed game is built in `../LopFBBounce`
+(Godot), which already has the real touch and the IK body. Decided by the
+developer on 2026-10-05.
 
 Design: [`docs/GDD.md`](docs/GDD.md) · Street: [`docs/STREET.md`](docs/STREET.md) · Roadmap: [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md) · State: [`docs/PROGRESS.md`](docs/PROGRESS.md) · Football: [`docs/FOOTBALL.md`](docs/FOOTBALL.md) · Layers: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
 ---
 
-## Where this came from
+## Design travels back to Godot
 
-`../LopFBBounce`, tag **`godot-final`**, is the reference. Its `domain/` (C#)
-is being ported file by file into `packages/domain` (TypeScript). **The C#
-tests are the oracle.** `tools/GoldenDump` in that repo writes the shipped
-tuning and the expected outputs into `tools/golden/` here, and the TypeScript
-tests compare against them. When a port disagrees with the golden file, the
-port is wrong until proven otherwise.
+The code here is thrown away when the desktop build starts; **the design is
+not.** Everything learned here must reach the Godot build intact. The full
+list is in [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md) § *What goes back
+to Godot*; the short version:
 
-The GDD, FOOTBALL.md and TUNING_LOG.md were written for the Godot build. Their
-rules still hold. Where they name a Godot node, a `.tscn` or the Remote tab,
-read it as history.
+- **The spec lives in `docs/`, never only in code.** A street rule added to
+  `packages/domain/src/street/` is written into STREET.md (or as an S36+ spec)
+  in engine-neutral words, the same day. Code and doc never disagree.
+- **Street rules are written to port to C#:** plain data in and out, the
+  names STREET.md uses, tests named as football sentences.
+- **The lean touch and the procedural body are stand-ins**, listed as such.
+  Nothing about them goes back; Godot's `BounceSolver` and IK are the real
+  ones. A complaint about the web touch is about the stand-in.
+- **Values are logged with their origin** (TUNING_LOG entries tagged *web*,
+  saying whether they depend on the lean touch).
+- **What players said is kept verbatim** in `docs/PLAYTESTS.md`. That is the
+  concept test's result.
+
+`../LopFBBounce` at tag **`godot-final`** is where the touch, the body and the
+shipped tuning come from. `tools/GoldenDump` there wrote
+`tools/golden/tuning/*.json`, which the lean touch reads wherever a number
+means the same thing (ball physics, level heights and apexes, reaches). The
+GDD, FOOTBALL.md and TUNING_LOG.md were written for the Godot build; their rules
+hold, and their Godot nodes and Remote-tab steps are history here.
 
 ---
 
@@ -64,7 +83,7 @@ nothing extra.
 | `packages/domain` | Pure TypeScript. Every rule, every number, every solver. **Never imports three, the DOM or Node.** |
 | `packages/game` | The Vite app. Thin three.js adapters over `domain`. |
 | `packages/server` | From STREET.md P4: the Node process that runs `domain` as the authority. Not created yet. |
-| `tools/golden` | JSON from `../LopFBBounce/tools/GoldenDump`: tuning, golden vectors, step logs. Never edited by hand. |
+| `tools/golden` | JSON from `../LopFBBounce/tools/GoldenDump`: the shipped tuning. Never edited by hand. |
 | `e2e` | The Playwright smoke test. |
 | `docs` | Design, roadmap, progress, tuning log. |
 
@@ -93,26 +112,28 @@ and go in `domain`. When in doubt: could this be wrong in a way a test would
 catch? Then it is a rule.
 
 **4. The body meets the ball; nothing in the body writes it.**
-The domain plans each contact (which limb, when, where) before it happens, and
-`game` drives the body to meet the plan with IK, a strike path and a reaction
-layer. IK stays inside the limb's planned reach; a ball out of reach is a miss,
-never a stretch. No bone is ever a solver input, and nothing in the body layer
-writes the ball or gates a state. The capsule behind F1, with the contact
-marker, is how a solver fault is told apart from a body fault.
+The domain decides each touch (which part, whether it is in reach); `game`
+only shows it. On the web the body is a stand-in: the mannequin's clips plus
+simple procedural bone turns for a kick, a knee, a chest or a header, with no
+IK. A ball out of reach is a miss the body is seen to swing at, never a
+stretch. No bone is ever a solver input, and nothing in the body layer writes
+the ball or gates a state. (The Godot build's contact plan and IK are the real
+version of this rule.)
 
 ---
 
-## Porting rules
+## Speed, within limits
 
-- Port **in dependency order**, one C# file to one TS file, with its tests
-  translated beside it. Keep the C# names (`BounceSolver`, `HoldOffset`), so
-  TUNING_LOG and the GDD still read true.
-- **Numbers:** C# is single-precision `float`; JS is double. Compare with a
-  tolerance, and use `Math.fround` where a value lands exactly on a threshold.
-  `MathF.Round` rounds half to even: use `roundHalfEven`, never `Math.round`.
-- **Tuning has one source:** `tools/golden/tuning/*.json`. No default value is
-  typed into TS code a second time.
-- A test that only passes after loosening its tolerance is a failing test.
+The concept test is meant to be fast, so the touch is lean (C1). Lean is not
+sloppy:
+
+- The four rules above hold in full. A lean rule is still a rule, in
+  `domain`, with a test.
+- **Shipped numbers are read, not retyped.** Where a Godot value means the
+  same thing, it comes from `tools/golden/tuning/*.json`. A new value (a goal
+  size, a keeper reach) is a named setting, recorded in docs.
+- Names follow the Godot build and STREET.md (`HoldOffset`, `TouchHeight`,
+  `ShotSolver`), so a grep finds the same word in both repos.
 
 ---
 
@@ -136,7 +157,7 @@ marker, is how a solver fault is told apart from a body fault.
 | `web-engineer` | three.js, rendering, assets, performance, the browser, later netcode |
 | `game-designer` | Should this mechanic exist, is this fair, is this in scope |
 | `level-designer` | The street pitch: size, walls, goal, sight lines |
-| `gameplay-engineer` | Porting and writing `domain`, its tests, the thin adapters |
+| `gameplay-engineer` | Writing `domain`, its tests, the thin adapters; keeping street rules portable to C# |
 | `tuning-analyst` | Turning a feel complaint into a parameter change |
 | `process-tracker` | What is done, what is next, is the gate passed |
 
@@ -147,7 +168,7 @@ never authority: the GDD and STREET.md win every tie.**
 
 | Skill | Loads when |
 |---|---|
-| `domain-rule` | A rule with a number in it is being added, changed or ported |
+| `domain-rule` | A rule with a number in it is being added or changed |
 
 Skills hold procedure; `docs/` holds values and state. A skill names
 `HoldOffset`; it never writes down what `HoldOffset` currently is.

@@ -3,15 +3,21 @@
 The `domain` ↔ `game` contract. Owned by the `gameplay-engineer` agent; the
 rendering side is `web-engineer`'s.
 
+This repo is the concept test (IMPLEMENTATION.md § *What this repo is for*).
+The code here is thrown away when the Godot build starts; the street rules'
+design is not. The layers below are kept for the reasons they were kept in
+Godot (every rule testable in milliseconds, one place the ball is written), and
+street rules are written so they port to C# (§ *Portability to C#*).
+
 ---
 
 ## Packages
 
 | | | |
 |---|---|---|
-| `packages/domain` | `@lopfb/domain` | Pure TypeScript. Every rule, every number, every solver. **Never imports three, the DOM or Node.** |
-| `packages/game` | `@lopfb/game` | The Vite app. Thin three.js adapters: render, input, camera, the ball integrator's collision shapes, the body drivers, the HUD, the tuning panel. |
-| `packages/server` | `@lopfb/server` | STREET.md P4. A Node process that runs `@lopfb/domain` as the authority. Not created yet. |
+| `packages/domain` | `@lopfb/domain` | Pure TypeScript. Every rule, every number, every solver: the lean touch, the ball's flight, the shot, the goal, the keeper, the street rules, the bots' decisions. **Never imports three, the DOM or Node.** |
+| `packages/game` | `@lopfb/game` | The Vite app. Thin three.js adapters: render, input, camera, the collision shapes handed to the integrator, the body (clips and simple procedural bone turns), the HUD, the tuning panel. |
+| `packages/server` | `@lopfb/server` | IMPLEMENTATION C3 (STREET.md §8). A Node process that runs `@lopfb/domain` as the authority. Not created yet. |
 
 `game` and `server` import `domain`. Nothing imports `game`. `domain` imports
 nothing but itself and the JSON under `tools/golden/tuning/`.
@@ -32,19 +38,19 @@ Enforced twice:
   `packages/domain/src` and fails on an import of `three`, of `@lopfb/game`, of
   any `node:` module or Node built-in, and on any use of a DOM or timing global
   (`window`, `document`, `performance`, `requestAnimationFrame`). It also fails
-  on `Math.random` and `Date.now`: the C# domain had no randomness and no clock
-  of its own, and the server at P4 depends on two runs of the same inputs
-  giving the same outputs.
+  on `Math.random` and `Date.now`: a rule has no randomness and no clock of its
+  own, and the C3 server depends on two runs of the same inputs giving the same
+  outputs.
 
-The payoff is the same as in Godot: every rule is testable in milliseconds,
-and from P4 the server runs the exact code the client runs.
+Every rule is testable in milliseconds, and from C3 the server runs the exact
+code the client runs.
 
 ### The conversion boundary
 
 The domain's vectors are plain readonly values (`Vec3` in
-`packages/domain/src/vec.ts`, the stand-in for `System.Numerics.Vector3`).
-`THREE.Vector3` lives in `game`. They meet in exactly one file:
-**`packages/game/src/bridge/vec.ts`**, the twin of the old `Vec.cs`.
+`packages/domain/src/vec.ts`). `THREE.Vector3` lives in `game`. They meet in
+exactly one file: **`packages/game/src/bridge/vec.ts`**, the twin of the Godot
+build's `Vec.cs`.
 
 - **Convert at the call site, inside the adapter.** Not in a helper three
   layers up.
@@ -65,30 +71,29 @@ requestAnimationFrame(now)
 FixedStep.advance(elapsed)  →  n steps of 1/120 s          (packages/domain/src/fixedStep.ts)
     │
     │  for each step:
-    │    read input and the owner's state
-    │    domain: PossessionArbiter, ContactPlanner, BounceSolver  →  a velocity
+    │    read input and the players' state
+    │    domain: the lean touch, the shot, the keeper  →  a velocity or a request
     │    integrator: apply it, then gravity, damp, position, collisions   ← the ONLY write
-    │    BallHistory.record(...)
     ▼
 render: draw ball and bodies, interpolated by FixedStep.alpha
 ```
 
-- **Fixed 120 Hz, as the Godot build.** `BounceSolver` differentiates the
-  owner's velocity against the previous tick; a variable step changes the
-  touch. A frame that stalls runs at most `maxSteps` and drops the rest.
-- **The integrator** copies `TrajectorySampler.Step`'s order: gravity, then
-  `v *= max(1 - LinearDamp·dt, 0)`, then position. Ground, wall boxes and
+- **Fixed 120 Hz, as the Godot build.** The shipped numbers in
+  `tools/golden/tuning/` were tuned at that step, and the C3 server runs the
+  same step. A frame that stalls runs at most `maxSteps` and drops the rest.
+- **The integrator** uses the Godot order (`TrajectorySampler.Step`): gravity,
+  then `v *= max(1 - LinearDamp·dt, 0)`, then position. Ground, wall boxes and
   goal-post cylinders use `Bounce` and `Friction` from `ball.json`. The arc
   preview runs the same steps, so it cannot disagree with the flight.
 - **The solver returns; the integrator writes.** Anything else that wants to
-  change the ball (a pass request, a deflection, from P2 a keeper's catch)
-  queues a request and waits for the next step. Nothing writes the ball's
-  position or velocity from a render frame, an event handler or the body.
+  change the ball (a touch, a shot, a deflection, a keeper's catch) queues a
+  request and waits for the next step. Nothing writes the ball's position or
+  velocity from a render frame, an event handler or the body.
 - The integrator's maths is a rule and lives in `domain` with tests. The
   collision shapes are read from the scene by `game` and passed in as plain
   data.
 
-From P4 the same step runs on the server. **The domain sim is the truth for
+From C3 the same step runs on the server. **The domain sim is the truth for
 every ball**, client and server; the three.js mesh only displays it.
 
 ---
@@ -97,71 +102,70 @@ every ball**, client and server; the three.js mesh only displays it.
 
 *Could this be wrong in a way a test would catch?* Then it is a rule.
 
-**In `domain`:** the touch, the carry, the stall, possession, charge curves,
-verb bands, landing prediction, trajectory sampling, reception, the contact
-plan and every limb reach, the strike path's timing, the stride clock, how far
-a part turns and how a turn is shared down a chain, the ball integrator, and
-from P1 the shot, the goal, the keeper and the street rules.
+**In `domain`:** the lean touch (which part by height band, the keep-up's
+apex, where it is aimed), the ball integrator, the goal line, the shot and its
+strike window, the keeper's reach and dives, the street rules, and the bots'
+decisions.
 
 **In `game`:** camera basis maths, mesh and material construction, input
-polling, scene lookups, the animation mixer, bone lookups, the `Limb` → bone
-name map, IK solving, blend weights, the 0.79 import scale and the 180° turn.
+polling, scene lookups, the animation mixer and blend weights, bone lookups,
+the 0.79 import scale and the 180° turn.
 
 When a file under `game` multiplies by a tuning value or by a literal that
-decides what the body *looks like it is doing*, that arithmetic is in the wrong
-package.
+decides what a player sees the ball *do*, that arithmetic is in the wrong
+package. The size of a procedural bone turn is the gray zone: if a playtester
+could complain about it, it is a named setting.
 
 ---
 
-## Rule 4 — the body meets the ball; nothing in the body writes it
+## Rule 4 — the body shows the touch; nothing in the body writes it
 
-```
-BounceSolver ──ball state──► ContactPlanner ──► ContactPlan { limb, kind, time, point, reachable }
-                                  │  BodyModel: rest-pose reach per limb,         re-planned every step,
-                                  │  from player.json, never a live bone          published BEFORE the contact
-─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  domain │ game
-                                  ▼
-        game/src/body: mixer (clips seeked to the stride phase) → LegDriver → ThighDriver
-        → UpperBodyDriver → ArmDriver (IK targets clamped to the planned reach) → ReactionSprings
-```
+The body here is a stand-in (IMPLEMENTATION § *Stand-ins*): the mannequin's
+locomotion clips blended by speed, with simple procedural bone turns on top for
+the part that plays the touch. There is no IK and no contact plan; those are
+Godot's.
 
-- **The solver decides; the body delivers.** The body runs in the render
-  frame, after the fixed steps, and reads the plan and the ball. Nothing in the
-  ball's path reads the body.
-- **A bone is never a solver input.** `BodyModel` holds rest-pose numbers,
-  checked against the loaded skeleton at boot by the rig check (the port of
-  `RigMetrics`). A breathing idle would otherwise make every touch height and
-  every tuning result unrepeatable.
-- **One reach rule, read twice.** The planner's reach is the forecast the body
-  acts on and the gate `BounceSolver` fires the touch through.
-- **F1** swaps the mannequin for the capsule, and the contact marker draws the
-  plan. Wrong on the capsule too is the solver; right on the capsule and wrong
-  on the body is the body.
+- **The domain decides; the body shows it.** The lean touch decides the part
+  and the moment; `game` turns the bones to show it, in the render frame, after
+  the fixed steps.
+- **A bone is never a solver input.** Reaches and heights enter the domain as
+  numbers from `player.json`, never from the live skeleton.
+- **Nothing in the body writes the ball or gates a state.** A ball the touch
+  calls out of reach is a miss, and the body is seen to miss it.
 
 ---
 
 ## Tuning
 
-**One source:** `tools/golden/tuning/*.json`, written by
+**One source for shipped values:** `tools/golden/tuning/*.json`, written by
 `../LopFBBounce/tools/GoldenDump` at `godot-final`. Never edited by hand, and no
-value in them is typed into TS a second time.
+value in them is typed into TS a second time. The lean touch reads them wherever
+a number means the same thing as in Godot: ball physics, each level's
+`TouchHeight`, `Apex` and `SpeedFactor`, the launch speeds, the body's reaches
+and heights. Most of the rest describes Godot's touch and body and is unused
+here.
 
 | File | Shape | What it is |
 |---|---|---|
 | `ball.json` | The C# `BallSettings` record serialised, PascalCase keys, nested by record (`Body`, `Possession`, `Bounce`, …) | The ball's rules |
 | `player.json` | `{ source, values, sceneOverrides, notParsed }`: a flat map of `PlayerMotor.cs`'s `[Export]` defaults, plus `player.tscn`'s overrides on the Player node (`HipLateral`) | The body's numbers: Body, Strike, Stride, Pose, Pass Load, Reaction, Follow |
-| `camera.json` | Same shape, from `CameraTuning.cs` | Most camera values are in `notParsed` because they defaulted to `CameraModes` statics; those are ported once, in `packages/domain/src/camera/` |
+| `camera.json` | Same shape, from `CameraTuning.cs` | Most values are in `notParsed` because they defaulted to `CameraModes` statics in C#; a camera value the web needs is a named setting here |
 | `animator.json` | Same shape, from `PlayerAnimator.cs` | The clip swing fractions and locomotion thresholds |
 
-- **Field names stay as in C#** (`HoldOffset`, `TouchLeadPerSpeed`). The JSON
-  loads without a rename table, and a name in TUNING_LOG greps to the same word
-  in TS.
+- **Field names stay as in C#** (`TouchHeight`, `LinearDamp`). The JSON loads
+  without a rename table, and a name in TUNING_LOG greps to the same word in TS.
 - **The flat maps are applied as in Godot:** `values`, then `sceneOverrides`
-  on top. The record builders copy `PlayerMotor`'s properties, **including the
-  degrees-to-radians conversion** for angle exports: the JSON holds degrees,
-  the domain works in radians.
-- **Loaders are strict.** A missing key or an unknown key throws, by name. A
-  silently defaulted value is how CarrySim's copy drifted.
+  on top.
+- **Angles.** `player.json` angles are in **degrees** (the keys end in
+  `Degrees`). `PlayerMotor` converted them with `Mathf.DegToRad` when it built
+  its records, so the web loader converts them to radians the same way. A
+  `ball.json` field ending in `Degrees` (`LoftMinDegrees`) is degrees in the C#
+  record too, and stays degrees until the code that uses it converts.
+- **Loaders are strict.** A missing key the code reads throws, by name. A
+  silently defaulted value is how a copy drifts from the shipped one.
+- **New values** (a goal size, a keeper reach, a rule's points) have no Godot
+  twin. They are named settings under `packages/domain/src/street/`, with their
+  starting values in one place, cited from STREET.md.
 - **The live panel (lil-gui)** edits a mutable copy of the loaded settings in
   `game`. The fixed step reads the settings every tick, never caches them, so
   an edit lands on the next tick. The panel can export its overrides as JSON
@@ -169,28 +173,35 @@ value in them is typed into TS a second time.
 
 ---
 
-## Golden files
+## Portability to C#
 
-```
-tools/golden/
-  tuning/    ball.json  player.json  camera.json  animator.json
-  vectors/   <Area>/<File>.json         pure functions: input → expected output
-             e.g. Ball/Ballistics.json, Ball/TrajectorySampler.json
-  steps/     <Solver>/<sequence>.json   stateful solvers: one record per 120 Hz tick
-             e.g. BounceSolver/standing-foot.json, PossessionArbiter/contest.json
-```
+The street rules are this repo's product: when the Godot build starts, it takes
+them over (IMPLEMENTATION § *What goes back to Godot*). For code under
+`packages/domain/src/street/` that means:
 
-- `<Area>` and `<File>` are the C# folder and file names, so a vector file
-  names its source.
-- A vector file is `{ source, cases: [{ name, args, expected }] }`. A step log
-  is `{ source, dt, settings, ticks: [{ input, state, output }] }`, where
-  `state` is the solver's state at the start of the tick, for the re-fed
-  replay. GoldenDump defines the exact shape; if it differs, this section
-  follows GoldenDump.
-- Tests read them with a static JSON import. The compare helpers
-  (`expectClose`, the step replayer) live in `packages/domain/test/support/`.
-- Default tolerance `1e-4` absolute. The method is in
-  [`IMPLEMENTATION.md`](IMPLEMENTATION.md) § Porting method.
+- **Plain data in, plain data out.** Inputs and outputs are readonly records of
+  numbers, booleans, strings and `Vec3`. No closures kept as state, no
+  callbacks into `game`, no TypeScript-only tricks (clever union types,
+  prototype games, `any`). A rule is written so it becomes a C# `readonly
+  record struct` and a static method without being restructured.
+- **State is explicit.** A stateful rule (`StreetRules`, the keeper's hold
+  clock) takes its state in and returns the next one, so its steps can be
+  dumped and replayed when the C# version is checked against it.
+- **Names are STREET.md's.** Types, settings and constants are spelled exactly
+  as STREET.md has them (`ShotSolver`, `StreetRules`, `KeeperPlanner`,
+  `GoalWidth`), so a grep finds the same word in the spec, the TS and the
+  future C#. A name the code needs and STREET.md lacks goes into STREET.md
+  first.
+- **Tests are football sentences**, as the C# tests are, so they translate to
+  xUnit names one for one.
+- **The spec is in the docs the same day.** Every street rule is described in
+  STREET.md (or an S36+ spec) in engine-neutral words: what it decides, its
+  parameters by name, the football behind it. Code and doc never disagree.
+- **No culture-dependent formatting or parsing**, in TS or in what it writes:
+  the C# side runs on the same Turkish Windows.
+
+The lean touch is exempt: it is a stand-in and does not go back. Its code
+follows the same habits anyway, because they cost nothing.
 
 ---
 
@@ -198,11 +209,9 @@ tools/golden/
 
 - TypeScript `strict`, `noUncheckedIndexedAccess`, ES modules, no default
   exports.
-- **No per-tick allocation inside the fixed step.** Preallocated arrays where
-  C# had a `Span<T>`. A 120 Hz loop that allocates feeds the garbage collector a
-  stutter that reads as a broken solver.
+- **No per-tick allocation inside the fixed step.** Preallocated arrays and
+  reused scratch values. A 120 Hz loop that allocates feeds the garbage
+  collector a stutter that reads as a broken solver.
 - **Locale.** This machine runs Turkish Windows. `toFixed` and `JSON.stringify`
   are culture-free; `toLocaleString`, `Intl.NumberFormat` without a locale and
   `toLocaleUpperCase` are not. Pass `'en-US'` every time.
-- **Numbers from C#.** `Math.fround` on both sides of a threshold that C#
-  compared in `float`; `roundHalfEven` where C# used `MathF.Round`.

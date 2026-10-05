@@ -2,10 +2,14 @@
 
 > **Written for the Godot build** (LopFBBounce, tag `godot-final`, in
 > `../LopFBBounce`). The rules hold here. The Godot nodes, the `.tscn` scenes,
-> the Inspector and the Remote tab it mentions are history: on the web the
-> numbers live in `tools/golden/tuning/*.json` and are edited live in the
-> lil-gui panel. S-numbers (S1–S35) refer to that repo's
+> the Inspector and the Remote tab it mentions are history here: on the web
+> the shipped numbers are in `tools/golden/tuning/*.json` and are edited live
+> in the lil-gui panel. S-numbers (S1–S35) refer to that repo's
 > `docs/IMPLEMENTATION.md`; M-numbers to its milestones.
+>
+> The web build is a concept test and plays a lean stand-in for the touch
+> ([`IMPLEMENTATION.md`](IMPLEMENTATION.md) § *Stand-ins*). The football here
+> applies to both builds; where it judges the touch, it judges Godot's.
 
 Owned by the `game-designer` agent. Read by all five.
 
