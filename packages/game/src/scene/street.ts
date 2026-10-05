@@ -27,23 +27,21 @@ import {
   type Texture,
 } from 'three';
 
+import { GOAL, PITCH, STREET_BOUNDS } from '@lopfb/domain';
+
 /**
  * The greybox street, built in code. Dusk, buildings both sides, a garage
- * door behind one street goal, two washing lines (for Laundry Lane).
- *
- * These sizes are a greybox, not rules. The goal and the pitch are
- * level-designer's (STREET.md §9 question 9), and once P1 needs them to decide
- * a goal they move into packages/domain with a test.
+ * door behind one street goal, two washing lines. The sizes are the domain's
+ * (`street/pitch.ts`), so what is drawn is what the ball collides with.
  */
-export const PITCH = { width: 18, length: 30 } as const;
-export const GOAL = { width: 3.6, height: 2.2, depth: 1.1, post: 0.055 } as const;
+export { GOAL, PITCH };
 
 const halfW = PITCH.width / 2;
 const halfL = PITCH.length / 2;
 const goalZ = -halfL;
-const wallX = halfW + 1.2;
-const wallBackZ = goalZ - 2.4;
-const wallFrontZ = halfL + 1.2;
+const wallX = STREET_BOUNDS.wallX;
+const wallBackZ = STREET_BOUNDS.wallBackZ;
+const wallFrontZ = STREET_BOUNDS.wallFrontZ;
 
 export interface Street {
   readonly root: Group;
@@ -226,15 +224,15 @@ export function buildStreet(scene: Scene): Street {
   door.receiveShadow = true;
   root.add(door);
 
-  const lowWall = new Mesh(new BoxGeometry(2 * wallX, 1.3, 0.4), new MeshStandardMaterial({ color: 0x8c8378, roughness: 0.95 }));
-  lowWall.position.set(0, 0.65, wallFrontZ + 0.2);
+  const lowWall = new Mesh(new BoxGeometry(2 * wallX, STREET_BOUNDS.lowWallHeight, STREET_BOUNDS.lowWallDepth), new MeshStandardMaterial({ color: 0x8c8378, roughness: 0.95 }));
+  lowWall.position.set(0, STREET_BOUNDS.lowWallHeight / 2, wallFrontZ + STREET_BOUNDS.lowWallDepth / 2);
   lowWall.castShadow = lowWall.receiveShadow = true;
   root.add(lowWall);
 
   // Street lamps
   const postMat = new MeshStandardMaterial({ color: 0x2c2b30, roughness: 0.6, metalness: 0.4 });
-  for (const [s, z] of [[-1, -8], [1, -2], [-1, 6], [1, 12]] as const) {
-    const x = s * (wallX - 0.25);
+  for (const [s, z] of STREET_BOUNDS.lamps) {
+    const x = s * (wallX - STREET_BOUNDS.lampInset);
     const post = new Mesh(new CylinderGeometry(0.07, 0.09, 5.4, 8), postMat);
     post.position.set(x, 2.7, z);
     post.castShadow = true;

@@ -25,18 +25,24 @@ to Godot*; the short version:
   in engine-neutral words, the same day. Code and doc never disagree.
 - **Street rules are written to port to C#:** plain data in and out, the
   names STREET.md uses, tests named as football sentences.
-- **The lean touch and the procedural body are stand-ins**, listed as such.
-  Nothing about them goes back; Godot's `BounceSolver` and IK are the real
-  ones. A complaint about the web touch is about the stand-in.
+- **The touch is Godot's, ported faithfully** (developer, 2026-10-05: the web
+  has every mechanic and talent the Godot build has). `BounceSolver`,
+  `ContactPlanner` and the rest of `domain/` at `godot-final` are TS twins,
+  file for file, with their tests. A change to the touch is a change to both
+  builds, made in the spec first.
+- **The procedural body, the ball integrator and the motor's slide are
+  stand-ins** (for the IK body, Jolt and `MoveAndSlide`), listed in
+  IMPLEMENTATION § *Stand-ins*. Nothing about them goes back.
 - **Values are logged with their origin** (TUNING_LOG entries tagged *web*,
-  saying whether they depend on the lean touch).
+  saying whether they depend on a stand-in).
 - **What players said is kept verbatim** in `docs/PLAYTESTS.md`. That is the
   concept test's result.
 
 `../LopFBBounce` at tag **`godot-final`** is where the touch, the body and the
 shipped tuning come from. `tools/GoldenDump` there wrote
-`tools/golden/tuning/*.json`, which the lean touch reads wherever a number
-means the same thing (ball physics, level heights and apexes, reaches). The
+`tools/golden/tuning/*.json`, which the ported touch reads through strict
+loaders (`ball.json` whole; the motor, body, stride and follow from
+`player.json`; the clip thresholds from `animator.json`). The
 GDD, FOOTBALL.md and TUNING_LOG.md were written for the Godot build; their rules
 hold, and their Godot nodes and Remote-tab steps are history here.
 
@@ -114,18 +120,18 @@ catch? Then it is a rule.
 **4. The body meets the ball; nothing in the body writes it.**
 The domain decides each touch (which part, whether it is in reach); `game`
 only shows it. On the web the body is a stand-in: the mannequin's clips plus
-simple procedural bone turns for a kick, a knee, a chest or a header, with no
-IK. A ball out of reach is a miss the body is seen to swing at, never a
+one procedural bone turn per touch (a kick, a knee, a chest, a header, a
+shoulder) toward the ported contact plan, with no IK. A ball out of reach is a miss the body is seen to swing at, never a
 stretch. No bone is ever a solver input, and nothing in the body layer writes
-the ball or gates a state. (The Godot build's contact plan and IK are the real
-version of this rule.)
+the ball or gates a state. (The Godot build's IK is the real version of this
+rule.)
 
 ---
 
 ## Speed, within limits
 
-The concept test is meant to be fast, so the touch is lean (C1). Lean is not
-sloppy:
+The concept test is meant to be fast. The touch is not where it saves time:
+it is ported (C1.P). The street rules are built lean, and lean is not sloppy:
 
 - The four rules above hold in full. A lean rule is still a rule, in
   `domain`, with a test.

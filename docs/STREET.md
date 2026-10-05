@@ -17,8 +17,8 @@ Owned by the `game-designer` agent.
 >
 > **The web build is the concept test (2026-10-05).** It implements this
 > design lean, to find out whether the street game holds people's attention
-> ([`IMPLEMENTATION.md`](IMPLEMENTATION.md) phases C1–C4), on a lean touch
-> that stands in for Godot's. §7's phases and gates describe the full game,
+> ([`IMPLEMENTATION.md`](IMPLEMENTATION.md) phases C1–C4), on Godot's
+> touch, ported faithfully (the developer, the same day). §7's phases and gates describe the full game,
 > to be built in Godot; the web's gates are IMPLEMENTATION's concept gates.
 > So this file is written in engine-neutral terms: it is what the Godot build
 > takes over.

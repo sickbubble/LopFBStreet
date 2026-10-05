@@ -1,6 +1,6 @@
 ---
 name: domain-rule
-description: Add or change a gameplay rule in LopFBStreet - anything with a number in it. Use when writing the lean touch, the ball integrator, the goal line, the shot, the keeper, the street rules or the bots' decisions in packages/domain, writing their Vitest tests, reading a shipped value from tools/golden/tuning, adding a tuning field, writing a street rule's spec into docs/STREET.md, keeping a street rule portable to C#, deciding whether code belongs in packages/domain or packages/game, or fixing a type error in either.
+description: Add or change a gameplay rule in LopFBStreet - anything with a number in it. Use when changing the ported Godot touch (BounceSolver, ContactPlanner and the rest), the ball integrator, the goal line, the shot, the keeper, the street rules or the bots' decisions in packages/domain, writing their Vitest tests, reading a shipped value from tools/golden/tuning, adding a tuning field, writing a street rule's spec into docs/STREET.md, keeping a street rule portable to C#, deciding whether code belongs in packages/domain or packages/game, or fixing a type error in either.
 ---
 
 # Adding or changing a rule
@@ -13,8 +13,12 @@ not by discipline.
 This repo is the concept test; the desktop game is Godot. There are two kinds
 of rule here:
 
-- **The lean touch** is a stand-in for Godot's touch. Simple, tested, and
-  nothing about it goes back.
+- **The touch is Godot's, ported** (developer, 2026-10-05: every mechanic
+  the Godot build has). `packages/domain/src/ball/`, `tuning/`, `player/`,
+  `camera/` and `body/strideClock.ts` are TS twins of `domain/` at
+  `godot-final`, file for file, with the C# tests ported under the same names.
+  A change to it is a change to both builds: spec first (S1-S35 or S36+).
+  The integrator and the body are web stand-ins and do not go back.
 - **The street rules** (the goal, the shot, the keeper, the rules, the bots)
   go back to Godot. They are specified in the docs and written to port to C#.
 
@@ -24,7 +28,7 @@ Ask: **could this be wrong in a way a unit test would catch?**
 
 | Rule — goes in `domain` | Engine vocabulary — stays in `game` |
 |---|---|
-| the lean touch: which part by height, the apex, where it is aimed | camera basis maths |
+| the touch (ported): which limb, the apex, where it is aimed | camera basis maths |
 | the ball integrator, the ground, walls and posts | mesh and material construction |
 | the goal line, the shot, the strike window | input polling, scene lookups, the frame loop |
 | the keeper's reaction time, reach and dives | the animation mixer, blend weights |
@@ -43,8 +47,8 @@ rule, however small, and it needs the domain, a named setting and a test.
 ## 2. Adding a rule, test-first
 
 1. **Find the spec.** A street rule's spec is in STREET.md (the shot §5, the
-   keeper §6, the rules §2–3) or an S36+ spec in IMPLEMENTATION.md. A lean
-   touch rule's is IMPLEMENTATION C1.4, and the bounce's C1.4b. If the spec is silent on something the
+   keeper §6, the rules §2–3) or an S36+ spec in IMPLEMENTATION.md. A touch
+   rule's is its S-number in `../LopFBBounce/docs/IMPLEMENTATION.md`. If the spec is silent on something the
    code must decide, the spec changes first: write the sentence, then the code.
 2. **Write the test first**, in `packages/domain/test/`, mirroring `src/`,
    named as a football sentence. Model inputs the game can actually generate.
@@ -55,11 +59,13 @@ rule, however small, and it needs the domain, a named setting and a test.
 6. **Write the doc the same day** (§3). For a street rule this is part of the
    task, not a follow-up.
 
-The C# in `../LopFBBounce` at `godot-final` is worth reading for how a rule was
-thought through (`LaunchSolver`'s profiles, `TrajectorySampler`'s step order).
-Read it there, never edit it, and do not port it: the lean version is written
-fresh. Godot's touch types are not built here (IMPLEMENTATION § *Not built
-here*).
+The C# in `../LopFBBounce` at `godot-final` is the source of the ported
+touch: read it there (`git -C ../LopFBBounce show godot-final:<path>`), never
+edit it. A ported file stays line for line with its C# twin: PascalCase record
+fields (as the JSON has them), camelCase methods, `as const` objects for enums,
+`null` for C#'s nullables. A ported test is never loosened to pass; a failure
+means the port drifted. What is not ported is in IMPLEMENTATION § *Not built
+here*.
 
 ## 3. Street rules travel back to Godot
 
@@ -85,8 +91,8 @@ lives only in TypeScript is lost with it. So, for anything under
 - **State is explicit**, so the rule's steps can be dumped and replayed when
   the C# version is checked against it later.
 
-The lean touch is exempt from the doc rule (it does not go back), but follows
-the same code habits.
+The ported touch is exempt from the street doc rule: its spec is already
+S1-S35 in the Godot repo, and it is C# already.
 
 ## 4. The four rules
 
@@ -184,8 +190,8 @@ npm run typecheck
   engine-neutral words, with the same names. Check it before calling the task
   done.
 - **A response to how the game feels:** it belongs in `docs/TUNING_LOG.md`
-  through `/tune`, tagged *web*, saying whether the value depends on the lean
-  touch.
+  through `/tune`, tagged *web*, saying whether the value depends on a
+  stand-in (the integrator, the body).
 - Update the task row in `docs/PROGRESS.md`.
 
 ## Sources

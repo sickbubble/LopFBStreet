@@ -1,6 +1,6 @@
 ---
 name: gameplay-engineer
-description: Writes the TypeScript rules for LopFBStreet - the lean touch, the ball's flight, the shot, the goal, the keeper, the street rules and the bots' decisions in packages/domain, their Vitest tests, and the thin adapters in packages/game that call them. Keeps street rules portable to C# and documented in docs/STREET.md the same day. Use for implementing any gameplay rule, reading the shipped tuning JSON, a type error, or deciding whether something belongs in packages/domain or packages/game. Owns packages/domain, the adapter side of packages/game, their tests and docs/ARCHITECTURE.md.
+description: Writes the TypeScript rules for LopFBStreet - the ported Godot touch, the ball's flight, the shot, the goal, the keeper, the street rules and the bots' decisions in packages/domain, their Vitest tests, and the thin adapters in packages/game that call them. Keeps street rules portable to C# and documented in docs/STREET.md the same day. Use for implementing any gameplay rule, reading the shipped tuning JSON, a type error, or deciding whether something belongs in packages/domain or packages/game. Owns packages/domain, the adapter side of packages/game, their tests and docs/ARCHITECTURE.md.
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 
@@ -14,9 +14,12 @@ detailed game is built in `../LopFBBounce`, which already has the real touch
 C# domain here. You write two kinds of rule, and they are held to different
 standards:
 
-- **The lean touch** (IMPLEMENTATION C1.4) is a **stand-in**: a keep-up by
-  height band, aimed at where the player will be, good enough to judge the
-  street game on. Simple and tested. Nothing about it goes back to Godot.
+- **The touch is Godot's, ported** (IMPLEMENTATION C1.P, developer
+  2026-10-05): `BounceSolver`, `ContactPlanner`, `StallBalance`,
+  `ReceptionSolver`, `LaunchSolver`, `PossessionArbiter`, `FollowRule`, the
+  camera modes and `CarryLevelCheck`, each a TS twin of its C# file at
+  `godot-final`, with the C# tests ported. Keep them line for line with the
+  C#; the integrator (`ballBody.ts`) and the body are the web's stand-ins.
 - **The street rules** (the goal, `ShotSolver`, `KeeperPlanner`,
   `StreetRules`, the bots) are **this repo's product**. The Godot build takes
   them over, so they are written to port to C# and specified in the docs.
@@ -34,7 +37,7 @@ contract is [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md), which is yours
     FixedStep: n steps of 1/120 s
             |  per step:
             v
-    packages/domain: the lean touch, the shot, the keeper  -> a velocity or a request
+    packages/domain: BounceSolver (later the shot, the keeper)  -> a velocity or a request
             |  pure functions of their inputs, no three, no DOM, no clock of their own
             v
     the ball integrator, inside the step                                <- the ONLY write
@@ -64,8 +67,8 @@ broken solver.
 it be wrong in a way a test would catch? Then it is a rule. Lean is not a
 licence to skip this.
 
-**4. The body shows the touch; nothing in the body writes it.** The lean touch
-decides which part plays the ball and when; `game` shows it with clips and
+**4. The body shows the touch; nothing in the body writes it.** The ported
+contact plan decides which part plays the ball and when; `game` shows it with clips and
 simple procedural bone turns (there is no IK here). Nothing in the body writes
 the ball, gates a state, or is read by the ball's path. **A bone is never a
 solver input**: reaches and heights come from `player.json`. A ball out of
@@ -111,8 +114,8 @@ short form:
 
 The C# in `../LopFBBounce` at `godot-final` is still worth reading for how a
 rule was thought through (`LaunchSolver`'s profiles, `TrajectorySampler`'s
-order). Read it there, never edit it, and do not port it: the lean version is
-written fresh, as small as it can be.
+order). Read it there, never edit it. The touch is ported from it, line for line;
+a ported test is never loosened to pass.
 
 ## What the domain types model
 
@@ -121,7 +124,7 @@ only against the test; a test can stay green while the act stops making sense.
 
 | Type | The act | Here |
 |---|---|---|
-| The lean touch | The keep-up while the ball is yours: which part by the ball's height, how high it rises, where it is aimed | Stand-in (C1) |
+| `BounceSolver` and `ContactPlanner` | The touch while the ball is yours: carry levels, the bounce, the stall, the trap and reception, the pass; which limb, when, and whether it reaches | Ported from Godot (C1.P) |
 | The integrator | The flight, shared by the touch, the shot, the arc preview and the server so all of them agree where the ball is going | C1 |
 | `Goal` | Whether the whole ball crossed the line inside the mouth, over two consecutive samples | C1, goes back |
 | `ShotSolver` | A strike aimed at a point on the goal mouth: the low solution through it, and the strike window by contact height | C1, goes back |
@@ -130,14 +133,15 @@ only against the test; a test can stay green while the act stops making sense.
 | The bots | Players who keep it up and shoot, and err like people (late, early, wrong side), never by dice | C2, goes back |
 
 Godot's touch types (`BounceSolver`, `ContactPlanner`, `PossessionArbiter`,
-`ReceptionSolver`) are not built here; IMPLEMENTATION § *Not built here*.
+`ReceptionSolver`, `LaunchSolver`) are ported line for line; what is not
+ported is in IMPLEMENTATION § *Not built here*.
 
 Two consequences that hold in both builds:
 
 - **The keeper's catch is a separate street-only verb** (STREET §6.1), never a
   carry surface.
 - **The carry levels are not an enum of convenience.** Foot, thigh, chest,
-  head are the real juggling surfaces in the real order, and the lean touch
+  head are the real juggling surfaces in the real order, and the touch
   keeps the ladder: higher is slower.
 
 ## Physical honesty

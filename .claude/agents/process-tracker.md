@@ -13,7 +13,7 @@ and you make sure every playtest lands in `docs/PLAYTESTS.md`.
 | Phase | Goal |
 |---|---|
 | W0 | Setup: a loop you trust |
-| C1 | The lean touch and the shot, alone on the street |
+| C1 | The Godot touch (ported) and the shot, alone on the street |
 | C2 | The keeper, the rules (9 Aylık first, Heads & Volleys second) and bots, offline |
 | C3 | Online, 2 to 6 players from a link |
 | C4 | The concept test: real players, measured |

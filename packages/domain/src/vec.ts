@@ -43,3 +43,11 @@ export const lerp = (a: Vec3, b: Vec3, t: number): Vec3 => ({
 
 /** The horizontal part: y dropped to zero. */
 export const flat = (a: Vec3): Vec3 => ({ x: a.x, y: 0, z: a.z });
+
+/** C#'s `v with { Y = y }`. */
+export const withY = (a: Vec3, y: number): Vec3 => ({ x: a.x, y, z: a.z });
+
+export const neg = (a: Vec3): Vec3 => ({ x: -a.x, y: -a.y, z: -a.z });
+
+/** Exact component equality, like `==` on System.Numerics.Vector3. */
+export const vecEquals = (a: Vec3, b: Vec3): boolean => a.x === b.x && a.y === b.y && a.z === b.z;

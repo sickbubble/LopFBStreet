@@ -15,7 +15,7 @@ street rules are written so they port to C# (§ *Portability to C#*).
 
 | | | |
 |---|---|---|
-| `packages/domain` | `@lopfb/domain` | Pure TypeScript. Every rule, every number, every solver: the lean touch, the ball's flight, the shot, the goal, the keeper, the street rules, the bots' decisions. **Never imports three, the DOM or Node.** |
+| `packages/domain` | `@lopfb/domain` | Pure TypeScript. Every rule, every number, every solver: the Godot touch (ported), the ball's flight, the shot, the goal, the keeper, the street rules, the bots' decisions. **Never imports three, the DOM or Node.** |
 | `packages/game` | `@lopfb/game` | The Vite app. Thin three.js adapters: render, input, camera, the collision shapes handed to the integrator, the body (clips and simple procedural bone turns), the HUD, the tuning panel. |
 | `packages/server` | `@lopfb/server` | IMPLEMENTATION C3 (STREET.md §8). A Node process that runs `@lopfb/domain` as the authority. Not created yet. |
 
@@ -71,9 +71,12 @@ requestAnimationFrame(now)
 FixedStep.advance(elapsed)  →  n steps of 1/120 s          (packages/domain/src/fixedStep.ts)
     │
     │  for each step:
-    │    read input and the players' state
-    │    domain: the lean touch, the shot, the keeper  →  a velocity or a request
-    │    integrator: apply it, then gravity, damp, position, collisions   ← the ONLY write
+    │    LaunchInput: the button holds → queued requests          (game/src/player/launchInput.ts)
+    │    PlayerMotor: Locomotion, FollowRule, CarrySpeed            (game/src/player/playerMotor.ts)
+    │    BallController.physicsProcess: PossessionArbiter, the state rule, hot balls
+    │    BallController.integrate: BounceSolver → a velocity;
+    │        BallBody.step: gravity, damp, position, contacts         ← the ONLY write
+    │    PassPreview: TrajectorySampler over the queued pass
     ▼
 render: draw ball and bodies, interpolated by FixedStep.alpha
 ```
@@ -89,9 +92,15 @@ render: draw ball and bodies, interpolated by FixedStep.alpha
   change the ball (a touch, a shot, a deflection, a keeper's catch) queues a
   request and waits for the next step. Nothing writes the ball's position or
   velocity from a render frame, an event handler or the body.
-- The integrator's maths is a rule and lives in `domain` with tests. The
-  collision shapes are read from the scene by `game` and passed in as plain
-  data.
+- The integrator (`ball/ballBody.ts`) is a rule and lives in `domain` with
+  tests: a solid sphere against a flat ground, boxes and capsules, with the
+  ball's own `Bounce` and `Friction`, and friction turning slip into spin. It
+  is the web's stand-in for Jolt. The street's colliders are plain data in
+  `street/pitch.ts`, which the scene also draws from, so what is drawn is what
+  the ball hits.
+- The order inside a step is Godot's: every node's `_PhysicsProcess` (the
+  buttons, the motor, the ball's bookkeeping), then the physics step that calls
+  the ball's `_IntegrateForces` (the solver, then the integrator).
 
 From C3 the same step runs on the server. **The domain sim is the truth for
 every ball**, client and server; the three.js mesh only displays it.
@@ -102,10 +111,11 @@ every ball**, client and server; the three.js mesh only displays it.
 
 *Could this be wrong in a way a test would catch?* Then it is a rule.
 
-**In `domain`:** the lean touch (which part by height band, the keep-up's
-apex, where it is aimed), the ball integrator, the goal line, the shot and its
-strike window, the keeper's reach and dives, the street rules, and the bots'
-decisions.
+**In `domain`:** the touch (`BounceSolver`, `ContactPlanner`, `StallBalance`,
+`ReceptionSolver`, `LaunchSolver`, `PossessionArbiter`), the follow and the
+carry speed, the camera modes and their blend, bias and framing, the touch
+poses' timing and angles, the ball integrator, the street's colliders, and
+later the goal line, the shot, the keeper, the street rules and the bots.
 
 **In `game`:** camera basis maths, mesh and material construction, input
 polling, scene lookups, the animation mixer and blend weights, bone lookups,
@@ -121,11 +131,11 @@ could complain about it, it is a named setting.
 ## Rule 4 — the body shows the touch; nothing in the body writes it
 
 The body here is a stand-in (IMPLEMENTATION § *Stand-ins*): the mannequin's
-locomotion clips blended by speed, with simple procedural bone turns on top for
-the part that plays the touch. There is no IK and no contact plan; those are
-Godot's.
+locomotion clips blended by speed, with one procedural bone turn on top for
+the part that plays the touch (`body/touchPose.ts`). The contact plan is
+Godot's, ported; the IK that met it there is not.
 
-- **The domain decides; the body shows it.** The lean touch decides the part
+- **The domain decides; the body shows it.** `ContactPlanner` decides the limb
   and the moment; `game` turns the bones to show it, in the render frame, after
   the fixed steps.
 - **A bone is never a solver input.** Reaches and heights enter the domain as
@@ -139,11 +149,12 @@ Godot's.
 
 **One source for shipped values:** `tools/golden/tuning/*.json`, written by
 `../LopFBBounce/tools/GoldenDump` at `godot-final`. Never edited by hand, and no
-value in them is typed into TS a second time. The lean touch reads them wherever
-a number means the same thing as in Godot: ball physics, each level's
-`TouchHeight`, `Apex` and `SpeedFactor`, the launch speeds, the body's reaches
-and heights. Most of the rest describes Godot's touch and body and is unused
-here.
+value in them is typed into TS a second time. `ball.json` is read whole (it
+*is* the ported touch's settings); `player.json` for the motor, the body's
+reaches, the stride, the follow and the touch poses; `animator.json` for the
+clip thresholds. The strike, pass-load and reaction numbers describe Godot's
+IK body and are unused here. `CarryLevelCheck` runs over the shipped files in
+a test.
 
 | File | Shape | What it is |
 |---|---|---|
@@ -200,8 +211,12 @@ them over (IMPLEMENTATION § *What goes back to Godot*). For code under
 - **No culture-dependent formatting or parsing**, in TS or in what it writes:
   the C# side runs on the same Turkish Windows.
 
-The lean touch is exempt: it is a stand-in and does not go back. Its code
-follows the same habits anyway, because they cost nothing.
+The ported touch already is C#: each TS file under `ball/`, `tuning/`,
+`player/`, `camera/` and `body/strideClock.ts` is the twin of the C# file of
+the same name at `godot-final`, with the same field names (PascalCase on
+records, as the JSON has them), the same method names in camelCase, and the
+same test names. A change to it is a change to both builds, made in the spec
+first.
 
 ---
 
@@ -209,9 +224,11 @@ follows the same habits anyway, because they cost nothing.
 
 - TypeScript `strict`, `noUncheckedIndexedAccess`, ES modules, no default
   exports.
-- **No per-tick allocation inside the fixed step.** Preallocated arrays and
-  reused scratch values. A 120 Hz loop that allocates feeds the garbage
-  collector a stutter that reads as a broken solver.
+- **Keep per-tick allocation small.** The ported solvers use immutable `Vec3`
+  values, as `System.Numerics.Vector3` is a value type, so they allocate a few
+  small objects per step: kept, because the port stays line for line with the
+  C#. The integrator, the arc buffer and the HUD do not allocate per tick. If a
+  profile ever shows GC stutter, pool there first.
 - **Locale.** This machine runs Turkish Windows. `toFixed` and `JSON.stringify`
   are culture-free; `toLocaleString`, `Intl.NumberFormat` without a locale and
   `toLocaleUpperCase` are not. Pass `'en-US'` every time.

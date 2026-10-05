@@ -28,11 +28,11 @@ your job:
   the football behind it. No three.js, no browser, no TypeScript in the
   sentence. If the Godot build could not pick it up from the doc alone, the doc
   is not finished. IMPLEMENTATION.md § *What goes back to Godot* is the list.
-- **The lean touch is a stand-in, not design.** The web plays a simple keep-up
-  by height band in place of Godot's touch (IMPLEMENTATION § *Stand-ins*).
-  Nothing about it is a design decision, and nothing about it goes back. Do
-  not design around its quirks, and do not let a GDD rule be rewritten to fit
-  it. The touch the GDD describes is Godot's, and it is the real one.
+- **The touch is Godot's, ported faithfully** (developer, 2026-10-05). The
+  web plays the GDD's touch as the Godot build does, so a touch finding here
+  is a finding about the Godot touch, and a change to it is a spec change for
+  both builds. The body (no IK) and the ball integrator (no Jolt) are still
+  stand-ins (IMPLEMENTATION § *Stand-ins*): do not design around their quirks.
 - **Netcode lessons go into STREET.md §8**, in terms of authority, events and
   lag, so they transfer to the desktop build's Steam transport.
 
@@ -47,7 +47,7 @@ Volleys is second. STREET.md §2's ruleset is unchanged.
 
 Under it sits the touch from LopFBBounce, as the GDD describes it: Ronaldinho
 *Joga Bonito* style, built out of **two buttons and three verbs**. On the web
-the lean stand-in plays a subset of it; in Godot it is all there:
+it is ported whole, as in Godot:
 
 - **Carry** — no input. Automatic keep-ups at a level: foot, knee, chest, head.
   Slow, and slower the higher. Every touch is played by the real body part —
@@ -144,7 +144,7 @@ the four apexes are a legibility ladder rather than a continuous range. Never
 
 ## Your hardest job: saying "later"
 
-The order is fixed: **W0 setup, C1 the lean touch and the shot, C2 the keeper,
+The order is fixed: **W0 setup, C1 the Godot touch (ported) and the shot, C2 the keeper,
 the rules and bots (offline), C3 online for 2 to 6, C4 the concept test with
 real players.** Nothing is networked before C3. 9 Aylık is the first preset,
 Heads & Volleys the second; the other presets are data, later. Laundry Lane is
@@ -154,8 +154,8 @@ When a good idea arrives that belongs to a later phase, write it under that
 phase (STREET.md §3 for presets, §9 for open questions) and say no for now.
 `../LopFBBounce/docs/LATER.md` is the old deferred pool, frozen with that repo:
 read it, do not add to it. The concept test is meant to be fast: the most
-expensive mistake here is polishing the stand-in touch or the body instead of
-getting the street game in front of players.
+expensive mistake here is polishing the stand-in body or the integrator
+instead of getting the street game in front of players.
 
 ## The gates are yours to judge
 
@@ -164,9 +164,9 @@ sets, and they are not the same thing:
 
 - **The C-gates** in [`docs/IMPLEMENTATION.md`](../../docs/IMPLEMENTATION.md)
   are **concept gates**: is the street game worth building properly? They are
-  judged on the web build, with the lean touch, so a gate sentence is about the
-  street game (the finish, the save, the rules, the room), not about the feel
-  of the touch.
+  judged on the web build, with the ported touch, so a gate sentence is about
+  the street game (the finish, the save, the rules, the room); the touch's
+  feel was tuned in Godot.
 - **STREET.md §7's phases and gates (P1–P5)** describe the full game, and stay
   the plan for the Godot build. Do not judge the web against them.
 
@@ -187,12 +187,13 @@ never instead of them.
 
 - **Keep the quote and the reading apart.** A reading goes in its own column,
   never into the quote.
-- **Mark the touch stand-in.** A complaint about the touch is about the lean
-  touch and may not apply to Godot's. Say so in the *Touch stand-in?* column
+- **Mark the stand-ins.** The touch is Godot's, so a touch complaint applies
+  to both builds; a complaint about the body or the ball's bounce off the
+  street may be the stand-in. Say which in the *Touch stand-in?* column
   rather than drawing a design conclusion from it.
 - **Separate the street game from the stand-ins.** *"I didn't know why I was in
-  goal"* is design and travels back. *"The keep-up feels floaty"* is probably
-  the stand-in. *"My save didn't count"* is netcode, STREET §8.
+  goal"* is design and travels back. *"The ball dies on the wall"* may be the
+  integrator. *"My save didn't count"* is netcode, STREET §8.
 - **C4's numbers are decided before launch** (IMPLEMENTATION C4.1). Read the
   result against them, not against a hope.
 

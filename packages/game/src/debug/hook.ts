@@ -9,6 +9,14 @@ export interface DebugHook {
   ready: boolean;
   stepsPerSecond: number;
   has(name: string): boolean;
+  /** The live game, for the smoke test: where the ball and the player are, who owns it. */
+  state?: () => {
+    ball: { x: number; y: number; z: number };
+    ballState: number;
+    owner: number;
+    player: { x: number; y: number; z: number };
+    touches: number;
+  };
 }
 
 declare global {

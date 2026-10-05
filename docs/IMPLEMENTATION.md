@@ -23,10 +23,16 @@ does, the detailed game is built in Godot (`../LopFBBounce`, tag
 
 Two consequences shape every phase below:
 
-1. **Speed over fidelity in the touch.** The web does not port `BounceSolver`
-   or the IK body. It has a **lean touch** (C1), simple and tested, good
-   enough to judge the street game on. The feel of the touch is Godot's job and
-   already exists there.
+1. **The touch is Godot's, ported faithfully; the body is not.** *Amended by
+   the developer the same day, 2026-10-05:* the web build has every mechanic
+   and talent the Godot build has, so the street game is judged on the real
+   touch, not a stand-in. `domain/` at `godot-final` (`BounceSolver`,
+   `ContactPlanner`, the stall, the trap and the perfect reception, hot balls,
+   possession, the pass profiles, the follow, the camera modes,
+   `CarryLevelCheck`) is ported one file to one file into
+   `packages/domain/src`, with its xUnit tests ported to Vitest under the same
+   names. The IK body is still not ported. The first plan, a **lean touch**,
+   is superseded.
 2. **Every design decision must travel back to Godot.** The street rules, the
    keeper, the shot, the netcode lessons and what players said are the
    product of this repo. They are written so the Godot build can take them
@@ -56,14 +62,16 @@ These rules make sure nothing learned here lives only in TypeScript.
    `tools/golden-out/` (to be written then) dumps the TS street rules' inputs
    and outputs, and the C# port is checked against them, as GoldenDump checks
    this repo against C# today.
-4. **The lean touch is a stand-in, not a design.** It is listed in the
-   *Stand-ins* table below. Nothing about it goes back. A playtest complaint
-   about the touch is logged, but it is evidence about the lean touch, not
-   about the Godot one.
+4. **The touch is the Godot touch.** A playtest complaint about the touch is
+   evidence about the Godot touch too, unless it is about the body or the ball
+   integrator, which are still stand-ins (below). The port does not change a
+   rule: a change to the touch is made in the spec (S1-S35, or S36+) first and
+   in both builds.
 5. **Values found here are logged with where they came from.** TUNING_LOG
    entries made here are tagged **web**, and say whether the value depends on
-   the lean touch (a shot speed tuned against it may not transfer) or not (a
-   goal size, a keeper reach, a lives count).
+   a stand-in (the integrator's contact numbers, the body's swing angles may
+   not transfer) or not (a goal size, a keeper reach, a lives count, anything
+   in the ported touch).
 6. **What players said is kept verbatim** in [`PLAYTESTS.md`](PLAYTESTS.md).
    That file is the concept test's result.
 7. **Netcode lessons go into STREET.md §8.** The desktop build will use Steam
@@ -76,16 +84,17 @@ What the web uses in place of the real thing. None of it goes to Godot.
 
 | Stand-in here | The real thing (Godot) |
 |---|---|
-| Lean touch: a keep-up by height band, aimed at where the player will be, with no stalls, traps or contact plan | `BounceSolver`, `ContactPlanner`, the levels, stalls, reception (S2–S29) |
-| Mannequin clips + simple procedural bone turns for a kick, a knee, a header | The contact plan driving IK: `LegDriver`, `ThighDriver`, `UpperBodyDriver`, `ArmDriver`, `TwoBoneIk` (S16–S30) |
-| Own ball integrator | Jolt `RigidBody3D` (and, for networked play, STREET §8's domain flight sim) |
+| Mannequin clips + one procedural bone turn per touch (`body/touchPose.ts`: a kick, a knee, a chest, a header, a shoulder), eased in to the planned contact and out after it | The contact plan driving IK: `LegDriver`, `ThighDriver`, `UpperBodyDriver`, `ArmDriver`, `TwoBoneIk`, the strike paths and the pass load (S16–S30) |
+| Own ball integrator, `ball/ballBody.ts`: `TrajectorySampler.Step` in flight; a solid sphere against the ground (restitution, Coulomb friction into spin), boxes and capsules | Jolt `RigidBody3D` (and, for networked play, STREET §8's domain flight sim) |
+| The motor's slide: a flat floor, and a circle pushed out of boxes and posts (`street/pitch.ts` `confineBody`) | `CharacterBody3D.MoveAndSlide` |
+| The camera arm pulled in by a ray against the street's boxes | `SpringArm3D` |
 | Node server, room links | Steam lobbies and Steam Networking Sockets |
 
-**Reused from Godot where it is cheap:** the lean touch reads the shipped
-numbers in `tools/golden/tuning/*.json` wherever they mean the same thing (ball
-radius, damping, bounce and friction; each level's `TouchHeight`, `Apex` and
-`SpeedFactor`; the launch speeds; the body's reaches and heights). So the ball
-flies, and the levels sit, where they do in Godot.
+**The shipped numbers are read, never retyped:** `ball.json`, `player.json`
+and `animator.json` load through strict loaders (`tuning/loaders.ts`), and
+`CarryLevelCheck` passes on them. Only the camera modes and the camera rig's
+exports, which GoldenDump could not reach, are copied from the C# at
+`godot-final` (TUNING_LOG says so).
 
 ---
 
@@ -104,7 +113,7 @@ Tasks are tagged:
 | Phase | Goal | Maps to STREET.md |
 |---|---|---|
 | W0 | Setup: a loop you trust | — |
-| C1 | The lean touch and the shot, alone on the street | P1, lean |
+| C1 | The Godot touch, then the shot, alone on the street | P1 |
 | C2 | The keeper, the rules and bots, offline | P2 + P3, lean |
 | C3 | Online, 2 to 6 players from a link | P4 + P5 |
 | C4 | The concept test: real players, measured | — |
@@ -141,26 +150,31 @@ test` is green in CI."*
 
 ---
 
-## C1 — The lean touch and the shot
+## C1 — The Godot touch and the shot
 
-One player on the street, a ball, a goal with nobody in it. The browser
-prototype of 2026-10-05 ([`prototypes/alman-ayligi.html`](../prototypes/alman-ayligi.html)) is the reference for how it plays; this phase rebuilds
-it properly, with the rules in `domain` and tests.
+One player on the street, a ball, a goal with nobody in it. The touch is the
+Godot build's, ported (C1.P); the shot is new (C1.5). The browser prototype of
+2026-10-05 ([`prototypes/alman-ayligi.html`](../prototypes/alman-ayligi.html))
+is the reference for how the shot plays.
+
+**The controls are Godot's** (`project.godot`): WASD, Shift to sprint, Space to
+jump, hold and release the left mouse to bounce (the height), hold and release
+the right mouse to pass (the power), R to reset the ball, C for the camera
+modes, F1 for the capsule, Esc to free the mouse; H for the tuning panel.
 
 | Id | Tag | Task | Done when |
 |---|---|---|---|
 | C1.1 | [CODE] | Tuning loaders: `ball.json` and `player.json` into typed settings, failing on a missing key; degrees to radians where `PlayerMotor` converted | Tests load the shipped files |
 | C1.2 | [CODE] | Ball flight: gravity, then `v *= max(1 - LinearDamp·dt, 0)`, then position (the Godot order, `TrajectorySampler.Step`); ground bounce with `Bounce` and `Friction`; walls as boxes; posts and bar as cylinders | Tests: a free flight lands where the closed form says; a post deflects |
 | C1.3 | [CODE] | `Goal`: the goal mouth, and the line crossed by the whole ball, tested over two consecutive ball samples, never a thin trigger (STREET §2.1) | Tests: in, wide, over, off the post and in |
-| C1.4 | [CODE] | Lean touch: the part is picked by the ball's height (the shipped `TouchHeight`s), the keep-up rises to the level's `Apex`, aimed at where the player will be when it comes down (GDD S7). Reach from the body's shipped reaches. Ground ball: carried ahead of the run | Tests: a standing keep-up comes back to the feet; a running one lands ahead of the runner, never behind |
-| C1.4b | [CODE] | **The bounce:** a commanded touch; the hold time sets the apex, from the shipped `BounceMaxApex` and `BounceChargeTime` (GDD, S6). The apex sets the level the ball is carried at afterwards, by `LevelForApex`'s rule (a commanded apex must clear the level's `TouchHeight` by `PopMargin`). Lean: no stall, no trap | Tests: a tap and a full hold give the shipped minimum and maximum apex; each apex band picks the right level |
+| C1.P | [CODE] | **Godot parity:** `domain/` at `godot-final` ported to `packages/domain/src` file for file (`ball/`, `tuning/`, `player/`, `body/strideClock`, `camera/`), every xUnit test ported (`BounceSolverTests` and the rest; `CarrySim` as `test/support/carrySim.ts`). The adapters in `packages/game` mirror Godot's controllers: `BallController` (with `BounceController` and `PossessionController` folded in), `PlayerMotor`, `LaunchInput`, `PassPreview`, `BallMarkers`, `BallTrackingCamera`, the animator, the debug HUD | Every ported test green; `packages/game/test/gameLoop.test.ts` plays the trap, the keep-up, a head stall, a walk and a pass |
 | C1.5 | [CODE] | `ShotSolver`: aim point on the goal plane, speed from the charge, the low solution through the point; the strike window by contact height against `SweetHeight[part]`, so early skies and late tops it, deterministic (STREET §5, lean) | Tests: same input, same shot; a clean strike goes through the aim point; the error sign per part |
-| C1.6 | [CODE] | Player motor, input (WASD, Shift, Space, hold-and-release click, R), the over-the-shoulder camera, the crosshair | Runs, sprints, aims |
-| C1.7 | [CODE] | The release-now arc and the ball's ground marker | The arc is drawn from the same flight steps as the ball |
+| C1.6 | [CODE] | Player motor, input (Godot's map, above), the camera rig and its five modes; the crosshair comes with the shot | Runs, sprints, jumps, aims |
+| C1.7 | [CODE] | The pass arc (`PassPreview`), the shadow and the landing ring (`BallMarkers`); the shot's arc comes with the shot | The arc is drawn from the same flight steps as the ball |
 | C1.8 | [CODE] | Body: `Idle_Loop` / `Walk_Loop` / `Jog_Fwd_Loop` / `Sprint_Loop` blended by speed; simple procedural bone turns on top for foot, knee, chest, header and volley | Each touch shows a part moving |
-| C1.9 | [CODE] | HUD: fps, a contextual prompt, the toast that names the contact (clean, skied, topped) | — |
+| C1.9 | [CODE] | HUD: fps, the Godot `DebugHud` readouts, the toast naming each touch (keep-up, stall, BROKE, trap, PERFECT...); the shot's toast (clean, skied, topped) comes with the shot | — |
 | C1.10 | [CODE] | lil-gui tuning panel over the live settings (shot, touch, ball); an edit lands on the next step, and a "copy as JSON" button for TUNING_LOG | Changes apply with no reload |
-| C1.11 | [CODE] | Smoke test extended: `Ball`, `Goal` | `npm run e2e` green |
+| C1.11 | [CODE] | Smoke test extended: `Ball`, `BallShadow`, `LandingRing`, `PassArc`, and the ball trapped and kept up with nobody pressing anything | `npm run e2e` green |
 | C1.12 | [DEV] | Play on the preview URL and report | Reported in PLAYTESTS.md, verbatim |
 
 **Gate:** *"I can run, keep the ball up and volley or head it at the goal, and
@@ -260,7 +274,6 @@ the developer's machine and one mid-range laptop.
 
 | What | Why |
 |---|---|
-| The faithful port of `domain/` (`BounceSolver`, `ContactPlanner`, stalls, reception, possession arbitration) | Godot has it. The concept test does not need it (decision 2026-10-05) |
-| The IK body and the reaction layer | Godot has it |
-| Laundry Lane (`domain/Level/*`, `LEVEL.md`, `DRESSING.md`) | Parked in the old repo |
+| The IK body, the strike paths, the pass load, the reaction layer (`domain/Body/*` except `StrideClock`; `game/scripts/Body/*`) | Godot has it; the body here is a stand-in |
+| Laundry Lane (`domain/Level/*`, `LEVEL.md`, `DRESSING.md`): the cloth, the hose, the drain, the checkpoints | Parked in the old repo (developer, 2026-10-05: street pitch only). The deflection rule (S34) is ported; nothing on the street triggers it |
 | `.tscn` / `.tres` scenes, `SceneContract`, `GODOT_SETUP.md`, `SCENE_SPECS.md` | Godot-only; the Playwright smoke test does the contract's job here |

@@ -82,7 +82,7 @@ Separate three failures before proposing anything:
 - **The mechanic:** the touch, the shot or the save did something unexpected.
   Hand it to `tuning-analyst` (`/tune`), or to `game-designer` if a rule is in
   question.
-- **A stand-in:** the lean touch or the body (IMPLEMENTATION § *Stand-ins*).
+- **A stand-in:** the body or the ball integrator (IMPLEMENTATION § *Stand-ins*).
   Note it as such; it says nothing about the pitch.
 
 ## What you do not do

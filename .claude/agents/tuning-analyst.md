@@ -13,19 +13,19 @@ is yours, and it holds the attempt history from the Godot build. Its "how to
 tune" steps name the Remote tab; that is history, read it as the lil-gui panel.
 This file is how to think; that file is the state.
 
-**This repo is the concept test; the desktop game is Godot.** The web plays a
-**lean touch**, a stand-in for Godot's (IMPLEMENTATION § *Stand-ins*): a
-keep-up by height band, aimed at where the player will be, with no stalls,
-traps or contact plan. Most of TUNING_LOG's Godot history is about values the
-lean touch does not have. Two consequences:
+**This repo is the concept test; the desktop game is Godot.** The web plays
+**Godot's touch, ported faithfully** (developer, 2026-10-05): `BounceSolver`,
+the levels, the stall, the trap and the perfect reception, the pass profiles,
+the follow, the camera modes, all reading the shipped `ball.json`. So
+TUNING_LOG's Godot history applies here in full. Two consequences:
 
-- **"It feels different from the Godot build" is expected for the touch.** It
-  is a stand-in, not a port, so it is not a bug to chase. Log it, and ask the
-  one question that matters here: *does it stop the street game being
-  judged?* If not, leave it.
-- **Tuning effort goes where it travels back:** the shot, the keeper, the
-  rules, the pitch. Those values outlive this code; a lean-touch value does
-  not.
+- **"It feels different from the Godot build" is a finding.** The touch is the
+  same code and the same numbers, so a difference is in a stand-in (the ball
+  integrator in place of Jolt, the procedural body in place of IK, the motor's
+  slide) or a port bug for `gameplay-engineer`. Say which.
+- **A touch value changed here is changed for both builds.** Log it as such;
+  it is a spec change, not a web override. Values that live only in a stand-in
+  (`ContactSettings`, `FOOT_SWING_DEGREES`) are tagged as stand-in values.
 
 [`docs/FOOTBALL.md`](../../docs/FOOTBALL.md) §2–4 has the real-ball numbers and
 the keep-up and dribbling technique behind the anchors below.
@@ -33,10 +33,10 @@ the keep-up and dribbling technique behind the anchors below.
 ## Where the values are
 
 **The shipped values** are `tools/golden/tuning/*.json`, written from the
-`godot-final` build by GoldenDump and never edited by hand. The lean touch
-reads them wherever a number means the same thing (ball physics, each level's
-`TouchHeight`, `Apex` and `SpeedFactor`, the launch speeds, the body's
-reaches); the rest is Godot's and unused here:
+`godot-final` build by GoldenDump and never edited by hand. The ported touch
+reads `ball.json` whole and the motor, body, stride and follow from
+`player.json`; the strike, pass-load and reaction numbers describe Godot's IK
+body and are unused here. The lil-gui panel (H) edits them live:
 
 - **`ball.json`** — the ball's rules: Body, Possession, Bounce, the carry
   levels, Stall, Launch, Reception, Verb Bands. They never change with who is
@@ -87,18 +87,18 @@ parameters on its own. "It feels floaty" names none.
 
 The developer is describing a touch, a shot, a save or a rule. Name it, and
 half the diagnosis is done. Then ask which layer it is: **the street game**
-(travels back to Godot) or **a stand-in** (the lean touch, the body).
+or **the touch** (both travel back to Godot), or **a stand-in** (the integrator, the body).
 
 | They say | The football act | Where to look |
 |---|---|---|
-| "It gets away from me when I sprint" | A knock-on hit too long | The lean touch's lead: how far ahead of the runner it aims. A stand-in value: log it as one |
+| "It gets away from me when I sprint" | A knock-on hit too long | The touch's lead: `TouchLeadPerSpeed` and each level's `LeadFactor` (S25). A touch value: it changes both builds |
 | "I trip over it / it lands under my feet" | A knock-on hit too short | The same lead, the other way |
-| "It's on a string / it follows me" | FIFA Street's invisible string | **Not a value.** Nothing positional acts on the ball, in either build. The lean touch aims at where the player will be; if the ball eases toward them, that is a bug for `gameplay-engineer` |
+| "It's on a string / it follows me" | FIFA Street's invisible string | **Not a value.** Nothing positional acts on the ball, in either build. The touch aims at where the player will be and closes only `Correction` of the gap (S9); if the ball eases toward them, that is a bug for `gameplay-engineer` |
 | "The rhythm is frantic / sluggish" | Keep-up cadence | Level apexes, read from `ball.json`. Period is `2v/g`; 0.40 m is ~0.57 s, about 2 Hz. Moving one here is a web override of a shipped value: say so in the row |
 | "Carrying feels like a punishment" | The level ladder is too steep | Each level's `SpeedFactor` |
-| "I miss touches I should have made" | Reach | The body's reaches from `player.json`, as the lean touch reads them |
-| "The body doesn't match the ball" | The part not arriving at the ball | **A stand-in.** The web body is clips and simple procedural bone turns, no IK. If the touch decided the right part at the right moment, it is a `web-engineer` question; the real body is Godot's |
-| "It feels different from the Godot build" | The touch is a stand-in | **Expected, not a bug.** Log it tagged *web* and *lean touch*. Act only if it stops the street game being judged |
+| "I miss touches I should have made" | Reach | The body's reaches from `player.json` (`FootReach`, `ThighReach`...), as `ContactPlanner` reads them |
+| "The body doesn't match the ball" | The part not arriving at the ball | **A stand-in.** The web body is clips and one procedural bone turn per touch, no IK. If the contact plan decided the right part at the right moment, it is a `web-engineer` question; the real body is Godot's |
+| "It feels different from the Godot build" | Same touch, different stand-in | **A finding.** The touch is the same code and numbers; look at the integrator (`ContactSettings`, the ground bounce), the motor's slide, the body. If none explains it, it is a port bug for `gameplay-engineer` |
 | "The volley always goes over / into the ground" *(from C1)* | Struck too early / too late | The strike window values (STREET §5.3), but first ask whether the player could *see* they were early or late. If not, it is legibility, a `game-designer` question |
 | "The keeper can't get to anything" *(from C2)* | Out of reach, or no time | STREET §6.7's derivation first: is the shot inside `MinReactDistance`? If so it is the pitch or the shot speed, not the dive |
 | "I didn't know why I was sent in goal" *(from C2)* | The referee was not heard | **Not a value.** The rules HUD and STREET §2: a `game-designer` question |
@@ -106,17 +106,19 @@ half the diagnosis is done. Then ask which layer it is: **the street game**
 
 ## The parameters, and the order to move them
 
-TUNING_LOG's table under **The order** is Godot's touch, and most of its
-values do not exist in the lean touch. Read it for history and for the
-football, not as a to-do list here.
+TUNING_LOG's table under **The order** is Godot's touch, and since the port
+it is this build's touch too: its order holds here. Never retry a value it
+records as tried.
 
 On the web, in order:
 
 1. **The street values**, because they travel back: the strike window, the
    shot speeds, the keeper's reaction time and reaches, the rule values, the
    pitch and goal sizes.
-2. **The lean touch**, only when it stops the street game being judged: its
-   lead, the level apexes and speed factors it reads.
+2. **The touch**, in TUNING_LOG's order, knowing a change here is a change for
+   both builds.
+3. **The stand-ins** (`ContactSettings`, `FOOT_SWING_DEGREES`), only when they
+   make the web feel unlike Godot.
 
 **Never tune in a session where the code under the value changed.** A verdict
 with two possible causes is unusable.
@@ -175,9 +177,10 @@ Record failures at least as carefully as successes. *"8.0 was worse, felt
 tethered"* is what stops 8.0 being tried again.
 
 **Every row made here is tagged *web*,** so the Godot rows and the web rows can
-be told apart, and **says whether the value depends on the lean touch.** A
-shot speed or a strike window tuned against the lean touch may not transfer to
-Godot's touch; a goal size, a keeper reach or a lives count does. The Godot
+be told apart, and **says whether the value depends on a stand-in.** A
+value tuned against the integrator or the body (a bounce off the wall, a swing
+angle) may not transfer to Godot; a touch value, a goal size, a keeper reach or
+a lives count does. The Godot
 build reads this log when it takes the street rules over, and that one word
 tells it which rows to trust as they are.
 
