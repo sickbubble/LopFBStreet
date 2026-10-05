@@ -144,7 +144,7 @@ test` is green in CI."*
 ## C1 — The lean touch and the shot
 
 One player on the street, a ball, a goal with nobody in it. The browser
-prototype of 2026-10-05 is the reference for how it plays; this phase rebuilds
+prototype of 2026-10-05 ([`prototypes/alman-ayligi.html`](../prototypes/alman-ayligi.html)) is the reference for how it plays; this phase rebuilds
 it properly, with the rules in `domain` and tests.
 
 | Id | Tag | Task | Done when |
