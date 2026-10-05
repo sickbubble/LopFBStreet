@@ -24,7 +24,8 @@ and `e2e` are green locally. Then the developer decided the web build is a
 lean concept test and Godot builds the detailed game, so the faithful port
 (W1–W3) is dropped: IMPLEMENTATION.md now runs W0, C1 (lean touch and shot),
 C2 (keeper, rules, bots), C3 (online 2–6), C4 (the concept test).
-**Next:** the developer's W0 steps (GitHub repo, Pages, the gate), then C1.
+Pushed to https://github.com/sickbubble/LopFBStreet (public); CI green; the preview is live at https://sickbubble.github.io/LopFBStreet/.
+**Next:** the W0 gate (W0.14, the developer edits a `.ts` file under `npm run dev`), then C1, starting with the bounce.
 
 Nothing has been played on the web yet. The gate has not been evaluated.
 
@@ -44,9 +45,9 @@ Nothing has been played on the web yet. The gate has not been evaluated.
 | W0.8 | [CODE] | `mannequin.glb` at 0.79 scale, facing +Z, playing `Idle_Loop` | W0.7 | Crown at ~1.45 m in the dev build | done |
 | W0.9 | [CODE] | Tuning JSON copied from GoldenDump (loaders are C1.1) | W0.3 | The four files are in `tools/golden/tuning/` | done |
 | W0.10 | [CODE] | Playwright smoke test in `e2e/` | W0.7 | `npm run e2e` green: boots, no console errors, `Street`, `Goal` and `Player` exist | done |
-| W0.11 | [DEV] | GitHub remote for the new repo | — | `git push` works | todo |
-| W0.12 | [CODE] | CI on push: typecheck, test, build, e2e | W0.10, W0.11 | Workflow green on GitHub | todo |
-| W0.13 | [DEV] | Deploy preview on GitHub Pages (`.github/workflows/pages.yml`) | W0.11 | A pushed commit gets a preview URL | todo |
+| W0.11 | [DEV] | GitHub remote for the new repo | — | `git push` works | done |
+| W0.12 | [CODE] | CI on push: typecheck, test, build, e2e | W0.10, W0.11 | Workflow green on GitHub | done |
+| W0.13 | [DEV] | Deploy preview on GitHub Pages (`.github/workflows/pages.yml`) | W0.11 | A pushed commit gets a preview URL | done |
 | W0.14 | [DEV] | **Gate:** edit a `.ts` file with `npm run dev` running and see the change; CI green | W0.7, W0.12 | The developer reports it | todo |
 
 ### Blocked
