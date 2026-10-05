@@ -1,0 +1,178 @@
+{
+  "Body": {
+    "Radius": 0.11,
+    "Mass": 0.43,
+    "GravityScale": 1,
+    "LinearDamp": 0.08,
+    "AngularDamp": 0.1,
+    "Bounce": 0.72,
+    "Friction": 0.35
+  },
+  "Possession": {
+    "Radius": 2.5,
+    "OwnershipMargin": 0.5,
+    "OwnershipDwell": 0.2,
+    "TouchCooldown": 0.15
+  },
+  "Bounce": {
+    "BounceMaxApex": 2,
+    "BounceChargeTime": 0.6,
+    "FlightEase": 0.5,
+    "TouchLeadPerSpeed": 0.05,
+    "TouchMaxSpeed": 12,
+    "KeepUpReach": 1.5,
+    "BehindReach": 0.2,
+    "CarryRadius": 0.65,
+    "StallCoupling": 0.08,
+    "StallRestore": 6,
+    "StallDamping": 4,
+    "Levels": {
+      "Foot": {
+        "TouchHeight": 0.25,
+        "HoldOffset": 0.3,
+        "Apex": 0.6,
+        "SpeedFactor": 0.6,
+        "LeadFactor": 1,
+        "Correction": 0.4,
+        "BreakRadius": 0,
+        "MicroMotion": 0,
+        "Stalls": false
+      },
+      "Thigh": {
+        "TouchHeight": 0.85,
+        "HoldOffset": 0.23,
+        "Apex": 1.2,
+        "SpeedFactor": 0.5,
+        "LeadFactor": 0.75,
+        "Correction": 0.55,
+        "BreakRadius": 0,
+        "MicroMotion": 0.04,
+        "Stalls": false
+      },
+      "Chest": {
+        "TouchHeight": 1.1,
+        "HoldOffset": 0.14,
+        "Apex": 1.63,
+        "SpeedFactor": 0.4,
+        "LeadFactor": 0.5,
+        "Correction": 0.75,
+        "BreakRadius": 0.25,
+        "MicroMotion": 0.03,
+        "Stalls": true
+      },
+      "Head": {
+        "TouchHeight": 1.55,
+        "HoldOffset": 0.03,
+        "Apex": 1.9,
+        "SpeedFactor": 0.3,
+        "LeadFactor": 0.35,
+        "Correction": 0.85,
+        "BreakRadius": 0.15,
+        "MicroMotion": 0.02,
+        "Stalls": true
+      }
+    },
+    "Trap": {
+      "WindowBefore": 0.12,
+      "WindowAfter": 0.12,
+      "Rebound": 0.3,
+      "MaxResidual": 2.8,
+      "LiftPerSpeed": 0.04
+    },
+    "Shoulder": {
+      "TouchHeight": 1.28,
+      "HoldOffset": 0.06,
+      "Exists": true
+    }
+  },
+  "Carry": {
+    "SlowTime": 0.6,
+    "RecoverTime": 0.15
+  },
+  "Launch": {
+    "MinSpeed": 3.5,
+    "MaxSpeed": 13,
+    "ChargeTime": 1,
+    "LaunchSpin": 6,
+    "Parts": {
+      "Foot": {
+        "PowerScale": 1,
+        "LoftMinDegrees": -10,
+        "LoftMaxDegrees": 70,
+        "SpinScale": 1,
+        "Side": {
+          "MinDegrees": 0,
+          "MaxDegrees": 0,
+          "Exists": false
+        }
+      },
+      "Backheel": {
+        "PowerScale": 0.58,
+        "LoftMinDegrees": 0,
+        "LoftMaxDegrees": 30,
+        "SpinScale": 0,
+        "Side": {
+          "MinDegrees": 0,
+          "MaxDegrees": 0,
+          "Exists": false
+        }
+      },
+      "Thigh": {
+        "PowerScale": 0.65,
+        "LoftMinDegrees": 5,
+        "LoftMaxDegrees": 60,
+        "SpinScale": 0.3,
+        "Side": {
+          "MinDegrees": 0,
+          "MaxDegrees": 0,
+          "Exists": false
+        }
+      },
+      "Chest": {
+        "PowerScale": 0.55,
+        "LoftMinDegrees": -10,
+        "LoftMaxDegrees": 35,
+        "SpinScale": 0,
+        "Side": {
+          "MinDegrees": 0,
+          "MaxDegrees": 0,
+          "Exists": false
+        }
+      },
+      "Shoulder": {
+        "PowerScale": 0.53,
+        "LoftMinDegrees": 0,
+        "LoftMaxDegrees": 40,
+        "SpinScale": 0,
+        "Side": {
+          "MinDegrees": 20,
+          "MaxDegrees": 120,
+          "Exists": true
+        }
+      },
+      "Head": {
+        "PowerScale": 0.74,
+        "LoftMinDegrees": -10,
+        "LoftMaxDegrees": 60,
+        "SpinScale": 0,
+        "Side": {
+          "MinDegrees": 0,
+          "MaxDegrees": 0,
+          "Exists": false
+        }
+      }
+    },
+    "AimLoftOffset": 40,
+    "AimLoftGain": 1.25
+  },
+  "Reception": {
+    "CatchSpeed": 10,
+    "RicochetRestitution": 0.4,
+    "CatchWindow": 0.12
+  },
+  "Bands": {
+    "FootMax": 0.5,
+    "ThighMax": 0.95,
+    "ChestMax": 1.45
+  }
+}

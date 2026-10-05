@@ -1,0 +1,15 @@
+{
+  "source": "PlayerAnimator.cs",
+  "values": {
+    "IdleBelow": 0.2,
+    "WalkAbove": 0.35,
+    "RunAbove": 3.5,
+    "SprintAbove": 6.5,
+    "Blend": 0.15,
+    "WalkRightSwingAt": 0.07,
+    "RunRightSwingAt": 0.67,
+    "SprintRightSwingAt": 0.74
+  },
+  "sceneOverrides": {},
+  "notParsed": []
+}

@@ -1,0 +1,10 @@
+{
+  // The rules of the game. lib has no DOM and types is empty, so a document,
+  // a window or a Node API here is a compile error before it is a test failure.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src"]
+}

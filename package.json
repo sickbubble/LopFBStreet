@@ -1,0 +1,23 @@
+{
+  "name": "lopfbstreet",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @lopfb/game",
+    "build": "npm run build -w @lopfb/game",
+    "preview": "npm run preview -w @lopfb/game",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p packages/domain && tsc -p packages/domain/tsconfig.test.json && tsc -p packages/game && tsc -p e2e",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24.0.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.3"
+  }
+}

@@ -1,0 +1,26 @@
+# LF everywhere, whoever commits from where. Developed on Windows, where an
+# editor save can otherwise flip a whole file to CRLF.
+* text=auto eol=lf
+
+*.ts    text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.html  text eol=lf
+*.yml   text eol=lf
+*.sh    text eol=lf
+
+# Binary assets: never normalise, never merge as text.
+*.png   binary
+*.jpg   binary
+*.webp  binary
+*.ktx2  binary
+*.hdr   binary
+*.glb   binary
+*.bin   binary
+*.blend binary
+*.fbx   binary
+*.ogg   binary
+*.mp3   binary
+*.wav   binary
+*.woff2 binary
