@@ -44,7 +44,7 @@ rule, however small, and it needs the domain, a named setting and a test.
 
 1. **Find the spec.** A street rule's spec is in STREET.md (the shot §5, the
    keeper §6, the rules §2–3) or an S36+ spec in IMPLEMENTATION.md. A lean
-   touch rule's is IMPLEMENTATION C1.4. If the spec is silent on something the
+   touch rule's is IMPLEMENTATION C1.4, and the bounce's C1.4b. If the spec is silent on something the
    code must decide, the spec changes first: write the sentence, then the code.
 2. **Write the test first**, in `packages/domain/test/`, mirroring `src/`,
    named as a football sentence. Model inputs the game can actually generate.
@@ -132,7 +132,8 @@ through a strict loader:
 
 - **`ball.json`**: the C# `BallSettings` record serialised. Ball physics
   (`Radius`, `LinearDamp`, `Bounce`, `Friction`), each level's `TouchHeight`,
-  `Apex` and `SpeedFactor`, the launch speeds.
+  `Apex` and `SpeedFactor`, the bounce's `BounceMaxApex` and
+  `BounceChargeTime`, the launch speeds.
 - **`player.json`**: a flat map of the Godot exports plus `sceneOverrides`
   applied on top. The body's reaches and heights. **Angles are degrees** (the
   keys end in `Degrees`); `PlayerMotor` converted them with `DegToRad`, and the
